@@ -11,6 +11,7 @@ import { WorldMap } from './render/map.js';
 import { AudioSystem } from './render/audio.js';
 import { UI } from './ui/ui.js';
 import { units, toggleUnits } from './ui/units.js';
+import { displayName } from './data/names.js';
 
 const WARPS = [1, 2, 4, 10, 25, 50];
 
@@ -91,7 +92,7 @@ class App {
     this.delivery = new DeliverySequence(this.vehicle);
     this.state = 'delivery';
     this.ui.delivery(this.delivery, this.vehicle, { skip: () => { this.delivery.skip(); } });
-    this.audio.say(`Shipping ${this.vehicle.name} hardware and propellant to the Cape.`);
+    this.audio.say(`Shipping ${displayName(this.vehicle)} hardware and propellant to the Cape.`);
   }
 
   startRollout() {
@@ -335,7 +336,7 @@ class App {
       if (d.alive) { const ll = inertialToLatLon(d.r, OMEGA * s.t); pos = { lat: ll.lat, lon: ll.lon, alt: len(d.r) - RE }; }
       return { name: d.name, kind: d.kind, alive: d.alive, impact: d.impact, pos };
     });
-    this.map.draw({ site: LAUNCH_SITE, track: s.track, predicted: this.pred, debris, pos: { lat: s.tel.lat, lon: s.tel.lon, alt: s.tel.alt }, status: s.status, label: this.vehicle.name });
+    this.map.draw({ site: LAUNCH_SITE, track: s.track, predicted: this.pred, debris, pos: { lat: s.tel.lat, lon: s.tel.lon, alt: s.tel.alt }, status: s.status, label: displayName(this.vehicle) });
     this.ui.mapInfo(s);
   }
 }

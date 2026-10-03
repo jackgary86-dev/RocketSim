@@ -1,3 +1,5 @@
+import { FICTIONAL } from './fictional.js';
+
 // 20 orbital launch vehicles. Figures are approximate public values, tuned so the
 // simplified physics model reproduces each vehicle's flown performance class.
 // Units: masses in tonnes, thrust in kN (vacuum), Isp in seconds, lengths in metres.
@@ -229,3 +231,9 @@ export const ROCKETS = [
 ];
 
 export const CLASSES = ['Small', 'Medium', 'Heavy', 'Super Heavy'];
+
+// Attach the original "inspired-by" names (see fictional.js) to every vehicle.
+for (const r of ROCKETS) {
+  const f = FICTIONAL[r.id];
+  if (f) { r.fictionalName = f[0]; r.fictionalMaker = f[1]; }
+}

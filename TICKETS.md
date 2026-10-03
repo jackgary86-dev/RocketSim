@@ -33,12 +33,6 @@ if (fails) { console.error(fails + ' vehicles failed to reach orbit'); process.e
 
 ## Backlog (in priority order)
 
-- [ ] **T1 — Fictional vehicle name set.** Add a `names` setting (`real` | `fictional`) in
-  `src/data/missions.js` settings and the Settings screen. Add a `fictionalName` and
-  `fictionalMaker` to every entry in `src/data/rockets.js` (recognisable but original, e.g.
-  Falcon 9 → "Kestrel 9", Saturn V → "Titan V", Starship → "Starliner Heavy" is NOT allowed
-  because it is a real name — pick unused names). Every place the UI shows `rocket.name` /
-  `maker` must go through a `displayName(rocket)` helper. Default to `fictional`.
 - [ ] **T2 — Cosmetic fixes.** (a) Rollout erection: rotate about the vehicle base so the
   base stays on the transporter until vertical, then settles on the mount
   (`rolloutPose` in `src/render/scene.js`). (b) Shuttle orbiter: wings should sit on the
@@ -73,6 +67,9 @@ if (fails) { console.error(fails + ' vehicles failed to reach orbit'); process.e
 - [ ] **T10 — Desktop packaging.** Add an Electron (or Tauri) wrapper with `npm run
   desktop`, a window icon and a build script producing a Windows installer.
 
+- [ ] **T11 — Remove remaining real-world names from the shipped data.** T1 only covers the vehicle name and maker. Also replace, in fictional mode, the real stage names (`S-IC`, `Centaur`, `ICPS`, `P80`, `Blok A core`, `Common Core Booster`, `EAP`, `GEM 63XL`, ...), the real-engine mentions in `desc` text (`RD-180`, `RS-25`, `Merlin 1D`, `Raptor`, `BE-4`, ...), and the real manufacturer cities in the shipping `ORIGINS` table in `src/sim/delivery.js`. Add `fictionalStages` / `fictionalDesc` to the data (or a lookup in `fictional.js`) and a `displayStage(rocket, i)` / `displayDesc(rocket)` helper; use them in the fuel screen, stage list, fueling console, HUD stage panel, event log and results. The real names keep working when the setting is `real`.
+- [ ] **T12 — Mission text and tutorial copy audit.** Review `src/data/missions.js`, `README.md` and `ROADMAP.md` for third-party names used as product copy (README and ROADMAP may keep real names strictly as "inspired by" references). Add a one-line "inspired by" credits note to the Settings screen.
+
 ## Done
 
-(The routine moves finished tickets here with the commit hash.)
+- [x] **T1 — Fictional vehicle name set.** `names` setting (fictional | real, default fictional) with a Settings toggle; original names for all 20 vehicles in `src/data/fictional.js`; every UI / voice / map / livery label goes through `displayName` / `displayMaker` in `src/data/names.js`. Verified: build passes, 20/20 vehicles reach orbit.
