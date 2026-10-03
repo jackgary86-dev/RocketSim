@@ -33,6 +33,7 @@ export class View {
     this.controls.enableDamping = true;
     this.debris = [];
     this.sim = null;
+    this.site = LAUNCH_SITE;
     this.setupFrame(LAUNCH_SITE);
     this.buildLights();
     this.buildEarth();
@@ -81,15 +82,10 @@ export class View {
     this.padGroup = new THREE.Group();
     this.padGroup.position.y = GROUND_Y;
     this.world.add(this.padGroup);
-    // Earth-fixed -> pad-local rotation (rows: east, up, south)
-    const e = this.east0, u = this.up0, n = this.north0;
-    const m = new THREE.Matrix4().set(e[0], e[1], e[2], 0, u[0], u[1], u[2], 0, -n[0], -n[1], -n[2], 0, 0, 0, 0, 1);
-    this.earth.quaternion.setFromRotationMatrix(m);
     this.earth.position.y = -RE;
     this.padGroup.add(this.earth);
 
     const clouds = new THREE.Mesh(new THREE.SphereGeometry(RE * 1.0045, 128, 96), new THREE.MeshStandardMaterial({ map: tex('/textures/earth_clouds_1024.png'), transparent: true, opacity: 0.85, depthWrite: false, roughness: 1 }));
-    clouds.quaternion.copy(this.earth.quaternion);
     clouds.position.y = -RE;
     this.padGroup.add(clouds);
     this.clouds = clouds;
@@ -103,6 +99,27 @@ export class View {
     atmo.position.y = -RE;
     this.padGroup.add(atmo);
     this.atmo = atmo;
+    this.applySiteOrientation();
+  }
+
+  /** Earth-fixed -> pad-local rotation (rows: east, up, south) for the current site. */
+  applySiteOrientation() {
+    const e = this.east0, u = this.up0, n = this.north0;
+    const m = new THREE.Matrix4().set(e[0], e[1], e[2], 0, u[0], u[1], u[2], 0, -n[0], -n[1], -n[2], 0, 0, 0, 0, 1);
+    this.earth.quaternion.setFromRotationMatrix(m);
+    this.clouds.quaternion.copy(this.earth.quaternion);
+  }
+
+  /** Move the pad to another launch site: re-orient the globe and repaint the grounds. */
+  setSite(site) {
+    if (site === this.site) return;
+    this.site = site;
+    this.setupFrame(site);
+    this.applySiteOrientation();
+    const old = this.groundMesh.material.map;
+    this.groundMesh.material.map = this.groundTexture();
+    this.groundMesh.material.needsUpdate = true;
+    if (old) old.dispose();
   }
 
   groundTexture() {
@@ -113,10 +130,19 @@ export class View {
       g.fillStyle = `rgba(${40 + Math.random() * 60},${70 + Math.random() * 60},${30 + Math.random() * 30},0.35)`;
       g.fillRect(Math.random() * 1024, Math.random() * 1024, 2 + Math.random() * 6, 2 + Math.random() * 6);
     }
-    // Atlantic east of the pad, Banana River to the west (12 km disc, 1024 px)
-    g.fillStyle = '#1c4e78'; g.fillRect(512 + 0.11 * 512, 0, 512, 1024);
-    g.fillStyle = '#2a5a80'; g.fillRect(0, 0, 512 - 0.3 * 512, 1024);
-    g.fillStyle = '#d9d2b8'; g.fillRect(512 + 0.1 * 512, 0, 8, 1024);
+    // 12 km disc, 1024 px. Ocean on the site's coast side; the Cape also has the Banana River to the west.
+    const sea = this.site.sea;
+    if (sea === 'east') {
+      g.fillStyle = '#1c4e78'; g.fillRect(512 + 0.11 * 512, 0, 512, 1024);
+      g.fillStyle = '#d9d2b8'; g.fillRect(512 + 0.1 * 512, 0, 8, 1024);
+    } else if (sea === 'west') {
+      g.fillStyle = '#1c4e78'; g.fillRect(0, 0, 512 - 0.11 * 512, 1024);
+      g.fillStyle = '#d9d2b8'; g.fillRect(512 - 0.11 * 512 - 8, 0, 8, 1024);
+    } else {
+      g.fillStyle = 'rgba(138,125,85,0.92)'; g.fillRect(0, 0, 1024, 1024); // dry steppe
+      for (let i = 0; i < 6000; i++) { g.fillStyle = `rgba(${120 + Math.random() * 50},${105 + Math.random() * 40},${60 + Math.random() * 30},0.3)`; g.fillRect(Math.random() * 1024, Math.random() * 1024, 2 + Math.random() * 7, 2 + Math.random() * 7); }
+    }
+    if (this.site.id === 'cape') { g.fillStyle = '#2a5a80'; g.fillRect(0, 0, 512 - 0.3 * 512, 1024); }
     g.fillStyle = '#8c8c86'; g.fillRect(512 - 30, 0, 14, 1024); g.fillRect(0, 512 + 60, 1024, 10);
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
   }
@@ -127,7 +153,7 @@ export class View {
     const dark = new THREE.MeshStandardMaterial({ color: 0x3b3d40, roughness: 0.9 });
     const steel = new THREE.MeshStandardMaterial({ color: 0x6d7378, metalness: 0.6, roughness: 0.5 });
     const white = new THREE.MeshStandardMaterial({ color: 0xe6e6e2, roughness: 0.7 });
-    const ground = new THREE.Mesh(new THREE.CircleGeometry(12000, 96), new THREE.MeshStandardMaterial({ map: this.groundTexture(), roughness: 1 }));
+    const ground = this.groundMesh = new THREE.Mesh(new THREE.CircleGeometry(12000, 96), new THREE.MeshStandardMaterial({ map: this.groundTexture(), roughness: 1 }));
     ground.rotation.x = -Math.PI / 2; ground.position.y = 0.4; P.add(ground);
 
     const slab = new THREE.Mesh(new THREE.BoxGeometry(160, 1.6, 160), grey); slab.position.y = 0.8; P.add(slab);

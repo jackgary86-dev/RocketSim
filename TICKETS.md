@@ -48,11 +48,6 @@ if (fails) { console.error(fails + ' vehicles failed to reach orbit'); process.e
   ignition, show an "engine shutdown — pad safing" message, shut the plume off over 1 s and
   keep the vehicle on the pad. After detank, "Recycle" must restart fueling with fresh
   tanks and a new `FuelingSequence`.
-- [ ] **T4 — Additional launch sites.** Add Vandenberg SLC-4E (34.632°N, 120.611°W, coast
-  to the west, azimuth range 140–200°), Kourou ELA-4 (5.239°N, 52.768°W, coast east) and
-  Baikonur Site 31 (45.996°N, 63.564°E, inland) to `src/sim/flight.js` as selectable
-  `LAUNCH_SITES`. Site picker on the configuration screen; the pad ground texture, the
-  azimuth slider range and the map marker follow the site. Cape Canaveral stays default.
 - [ ] **T5 — Career mode (money).** New menu entry "Career". Start with $250M. Each launch
   costs hardware (sum of `dry` tonnes × $1.2M/t for liquid stages, $0.4M/t for solids) plus
   propellant (from the shipping manifest, $2k/t kerolox, $6k/t hydrolox, $1.5k/t methalox,
@@ -72,7 +67,22 @@ if (fails) { console.error(fails + ' vehicles failed to reach orbit'); process.e
   checks, authorize, stage, map) with dismissible callouts.
 - [ ] **T10 — Desktop packaging.** Add an Electron (or Tauri) wrapper with `npm run
   desktop`, a window icon and a build script producing a Windows installer.
+- [ ] **T11 — Vandenberg southerly launches fall short for Vulcan and Shuttle.** With
+  `site: 'vandenberg'` and azimuth 180 (zero Earth-rotation boost) Vulcan Centaur VC4 and
+  the Space Shuttle end up suborbital (checked headlessly). Either retune the default
+  Vandenberg azimuth (e.g. 160–170° gives some eastward boost), add a per-site payload
+  derate shown in the config stats panel, or warn "insufficient Δv from this site" in the
+  config warning line. Add a headless per-site orbit check to the verification section of
+  this file once all 20 vehicles pass at each site's default azimuth.
+- [ ] **T12 — Per-site pad scenery and range safety.** Pad models are Cape-shaped (flame
+  trench, tower side). Add per-site pad variants (Vandenberg hillside, Kourou jungle
+  treeline, Baikonur flat steppe with railway) in `buildPad` and show a range-safety
+  warning when the chosen azimuth overflies land for the site (e.g. Kourou azimuth < 20°,
+  Baikonur any azimuth east of 70° overflying China is a non-issue but < 50° drops stages
+  on Russia).
 
 ## Done
 
 (The routine moves finished tickets here with the commit hash.)
+
+- [x] **T4 — Additional launch sites.** Done: `LAUNCH_SITES` (Cape, Vandenberg SLC-4E, Kourou ELA-4, Baikonur Site 31) in `src/sim/flight.js`; site picker on the config screen (resets/clamps the azimuth slider to the site's range), globe orientation, pad ground texture (coast side / steppe), map marker, shipping/rollout text follow the site. Cape stays default. Branch `ticket/T4-launch-sites`.

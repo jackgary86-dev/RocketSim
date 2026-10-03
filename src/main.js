@@ -1,7 +1,7 @@
 import { ROCKETS } from './data/rockets.js';
 import { DEFAULT_CONFIG, buildVehicle, vehicleStats } from './data/config.js';
 import { MISSIONS, evaluate, progress, settings } from './data/missions.js';
-import { FlightSim, LAUNCH_SITE } from './sim/flight.js';
+import { FlightSim, getSite } from './sim/flight.js';
 import { DeliverySequence } from './sim/delivery.js';
 import { FuelingSequence } from './sim/fueling.js';
 import { PrelaunchSequence } from './sim/prelaunch.js';
@@ -80,7 +80,7 @@ class App {
 
   showConfig() {
     this.state = 'config';
-    const refresh = () => { this.vehicle = buildVehicle(this.rocket, this.cfg); this.ui.configStats(this.vehicle, vehicleStats(this.vehicle)); this.view.setVehicle(this.vehicle); };
+    const refresh = () => { this.view.setSite(getSite(this.cfg.site)); this.vehicle = buildVehicle(this.rocket, this.cfg); this.ui.configStats(this.vehicle, vehicleStats(this.vehicle)); this.view.setVehicle(this.vehicle); };
     this.ui.config(this.rocket, this.cfg, { change: refresh, next: () => this.startDelivery(), back: () => this.showFuel() });
     refresh();
   }
@@ -91,7 +91,7 @@ class App {
     this.delivery = new DeliverySequence(this.vehicle);
     this.state = 'delivery';
     this.ui.delivery(this.delivery, this.vehicle, { skip: () => { this.delivery.skip(); } });
-    this.audio.say(`Shipping ${this.vehicle.name} hardware and propellant to the Cape.`);
+    this.audio.say(`Shipping ${this.vehicle.name} hardware and propellant to ${getSite(this.vehicle.site).place}.`);
   }
 
   startRollout() {
@@ -99,7 +99,7 @@ class App {
     this.rolloutT = 0;
     this.rolloutDur = 16;
     this.ui.rollout(this.vehicle, { skip: () => { this.rolloutT = this.rolloutDur; } });
-    this.audio.say('Rollout to launch complex 39 A.');
+    this.audio.say(`Rollout to ${getSite(this.vehicle.site).short}.`);
   }
 
   showPad() {
@@ -134,7 +134,7 @@ class App {
   startPrecheck() {
     this.state = 'precheck';
     this.prelaunch = new PrelaunchSequence({ failures: settings.data.failures });
-    this.sim = new FlightSim(this.vehicle, { failures: settings.data.failures });
+    this.sim = new FlightSim(this.vehicle, { site: getSite(this.vehicle.site), failures: settings.data.failures });
     this.applyDifficulty();
     const p = this.prelaunch;
     this.ui.precheck(p, {
@@ -335,7 +335,7 @@ class App {
       if (d.alive) { const ll = inertialToLatLon(d.r, OMEGA * s.t); pos = { lat: ll.lat, lon: ll.lon, alt: len(d.r) - RE }; }
       return { name: d.name, kind: d.kind, alive: d.alive, impact: d.impact, pos };
     });
-    this.map.draw({ site: LAUNCH_SITE, track: s.track, predicted: this.pred, debris, pos: { lat: s.tel.lat, lon: s.tel.lon, alt: s.tel.alt }, status: s.status, label: this.vehicle.name });
+    this.map.draw({ site: this.sim.site, track: s.track, predicted: this.pred, debris, pos: { lat: s.tel.lat, lon: s.tel.lon, alt: s.tel.alt }, status: s.status, label: this.vehicle.name });
     this.ui.mapInfo(s);
   }
 }
