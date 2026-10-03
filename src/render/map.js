@@ -10,7 +10,7 @@ export class WorldMap {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.img = new Image();
-    this.img.src = '/textures/earth_atmos_2048.jpg';
+    this.img.src = import.meta.env.BASE_URL + 'textures/earth_atmos_2048.jpg';
     this.zoom = 1;
     this.cx = 0.5; this.cy = 0.5;   // view centre in map fractions
     this.follow = true;

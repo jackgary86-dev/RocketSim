@@ -7,12 +7,41 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "desktop": "vite build && electron .",
+    "desktop:icon": "node desktop/make-icon.mjs",
+    "desktop:build": "vite build && electron-builder --win nsis"
   },
   "dependencies": {
     "three": "^0.170.0"
   },
   "devDependencies": {
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3",
     "vite": "^6.0.0"
+  },
+  "main": "desktop/main.cjs",
+  "author": "RocketSim",
+  "build": {
+    "appId": "com.rocketsim.app",
+    "productName": "RocketSim",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**",
+      "desktop/main.cjs",
+      "package.json"
+    ],
+    "icon": "build/icon.png",
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }

@@ -70,9 +70,9 @@ if (fails) { console.error(fails + ' vehicles failed to reach orbit'); process.e
   buttons for pitch/yaw, stage, throttle, map and camera in the flight HUD.
 - [ ] **T9 — Tutorial mission.** A guided first flight that highlights each step (fuel,
   checks, authorize, stage, map) with dismissible callouts.
-- [ ] **T10 — Desktop packaging.** Add an Electron (or Tauri) wrapper with `npm run
-  desktop`, a window icon and a build script producing a Windows installer.
 
 ## Done
 
 (The routine moves finished tickets here with the commit hash.)
+
+- [x] **T10 — Desktop packaging.** Electron wrapper (`desktop/main.cjs`), `npm run desktop` (build + launch), `npm run desktop:build` (electron-builder NSIS Windows installer into `release/`), generated window/installer icon (`npm run desktop:icon` -> `build/icon.png`); Vite `base: './'` and texture URLs made base-relative so the build loads from `file://`.
