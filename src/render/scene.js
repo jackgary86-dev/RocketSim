@@ -76,7 +76,7 @@ export class View {
   buildEarth() {
     const loader = new THREE.TextureLoader();
     const tex = (p) => { const t = loader.load(p); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; };
-    this.earthMat = new THREE.MeshStandardMaterial({ map: tex('/textures/earth_atmos_2048.jpg'), roughness: 0.9, metalness: 0, emissiveMap: tex('/textures/earth_lights_2048.png'), emissive: new THREE.Color(0xffe6b0), emissiveIntensity: 0.22 });
+    this.earthMat = new THREE.MeshStandardMaterial({ map: tex(import.meta.env.BASE_URL + 'textures/earth_atmos_2048.jpg'), roughness: 0.9, metalness: 0, emissiveMap: tex(import.meta.env.BASE_URL + 'textures/earth_lights_2048.png'), emissive: new THREE.Color(0xffe6b0), emissiveIntensity: 0.22 });
     this.earth = new THREE.Mesh(new THREE.SphereGeometry(RE, 192, 128), this.earthMat);
     this.padGroup = new THREE.Group();
     this.padGroup.position.y = GROUND_Y;
@@ -88,7 +88,7 @@ export class View {
     this.earth.position.y = -RE;
     this.padGroup.add(this.earth);
 
-    const clouds = new THREE.Mesh(new THREE.SphereGeometry(RE * 1.0045, 128, 96), new THREE.MeshStandardMaterial({ map: tex('/textures/earth_clouds_1024.png'), transparent: true, opacity: 0.85, depthWrite: false, roughness: 1 }));
+    const clouds = new THREE.Mesh(new THREE.SphereGeometry(RE * 1.0045, 128, 96), new THREE.MeshStandardMaterial({ map: tex(import.meta.env.BASE_URL + 'textures/earth_clouds_1024.png'), transparent: true, opacity: 0.85, depthWrite: false, roughness: 1 }));
     clouds.quaternion.copy(this.earth.quaternion);
     clouds.position.y = -RE;
     this.padGroup.add(clouds);
