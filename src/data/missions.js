@@ -1,16 +1,16 @@
 // Mission list, objective evaluation, scoring and browser-saved progress.
 
 export const MISSIONS = [
-  { id: 'first-orbit', name: 'First Orbit', brief: 'Put any payload into a stable orbit with a perigee above 150 km.', rocketClass: null, goals: { orbit: true } },
-  { id: 'smallsat', name: 'Smallsat Rideshare', brief: 'Use a Small-class launcher to reach a 500 km circular orbit.', rocketClass: 'Small', goals: { orbit: true, alt: [470, 530] } },
-  { id: 'station', name: 'Station Resupply', brief: 'Deliver at least 3 t of cargo to a 410 km orbit inclined 51.6°.', rocketClass: null, goals: { orbit: true, alt: [390, 430], inc: [50.6, 52.6], payload: 3 } },
-  { id: 'heavy-haul', name: 'Heavy Haul', brief: 'Carry 20 t or more into low Earth orbit.', rocketClass: null, goals: { orbit: true, payload: 20 } },
-  { id: 'high-orbit', name: 'High Orbit', brief: 'Reach a circular orbit at 800 km or higher.', rocketClass: null, goals: { orbit: true, altMin: 800 } },
-  { id: 'reusable', name: 'Land the Booster', brief: 'Reach orbit on a reusable vehicle and bring the first stage back to the droneship.', rocketClass: null, goals: { orbit: true, landing: true } },
-  { id: 'deploy', name: 'Satellite Deploy', brief: 'Reach orbit, then deploy the payload as a free-flying spacecraft.', rocketClass: null, goals: { orbit: true, deploy: true } },
-  { id: 'deorbit', name: 'Return to Earth', brief: 'Reach orbit, then deorbit the upper stage and bring it down in the Pacific.', rocketClass: null, goals: { orbit: true, deorbit: true } },
-  { id: 'manual', name: 'Fly It Yourself', brief: 'Reach orbit on HARD difficulty — you fly pitch, heading and staging.', rocketClass: null, goals: { orbit: true, difficulty: 'hard' } },
-  { id: 'moonshot', name: 'Moonshot Rehearsal', brief: 'Super Heavy class: 40 t or more to a 250 km parking orbit.', rocketClass: 'Super Heavy', goals: { orbit: true, payload: 40, alt: [230, 270] } },
+  { id: 'first-orbit', reward: 20, name: 'First Orbit', brief: 'Put any payload into a stable orbit with a perigee above 150 km.', rocketClass: null, goals: { orbit: true } },
+  { id: 'smallsat', reward: 45, name: 'Smallsat Rideshare', brief: 'Use a Small-class launcher to reach a 500 km circular orbit.', rocketClass: 'Small', goals: { orbit: true, alt: [470, 530] } },
+  { id: 'station', reward: 120, name: 'Station Resupply', brief: 'Deliver at least 3 t of cargo to a 410 km orbit inclined 51.6°.', rocketClass: null, goals: { orbit: true, alt: [390, 430], inc: [50.6, 52.6], payload: 3 } },
+  { id: 'heavy-haul', reward: 250, name: 'Heavy Haul', brief: 'Carry 20 t or more into low Earth orbit.', rocketClass: null, goals: { orbit: true, payload: 20 } },
+  { id: 'high-orbit', reward: 110, name: 'High Orbit', brief: 'Reach a circular orbit at 800 km or higher.', rocketClass: null, goals: { orbit: true, altMin: 800 } },
+  { id: 'reusable', reward: 160, name: 'Land the Booster', brief: 'Reach orbit on a reusable vehicle and bring the first stage back to the droneship.', rocketClass: null, goals: { orbit: true, landing: true } },
+  { id: 'deploy', reward: 70, name: 'Satellite Deploy', brief: 'Reach orbit, then deploy the payload as a free-flying spacecraft.', rocketClass: null, goals: { orbit: true, deploy: true } },
+  { id: 'deorbit', reward: 130, name: 'Return to Earth', brief: 'Reach orbit, then deorbit the upper stage and bring it down in the Pacific.', rocketClass: null, goals: { orbit: true, deorbit: true } },
+  { id: 'manual', reward: 200, name: 'Fly It Yourself', brief: 'Reach orbit on HARD difficulty — you fly pitch, heading and staging.', rocketClass: null, goals: { orbit: true, difficulty: 'hard' } },
+  { id: 'moonshot', reward: 400, name: 'Moonshot Rehearsal', brief: 'Super Heavy class: 40 t or more to a 250 km parking orbit.', rocketClass: 'Super Heavy', goals: { orbit: true, payload: 40, alt: [230, 270] } },
 ];
 
 const DIFF_MULT = { easy: 1, normal: 1.5, hard: 2.2 };

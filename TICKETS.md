@@ -53,13 +53,6 @@ if (fails) { console.error(fails + ' vehicles failed to reach orbit'); process.e
   Baikonur Site 31 (45.996°N, 63.564°E, inland) to `src/sim/flight.js` as selectable
   `LAUNCH_SITES`. Site picker on the configuration screen; the pad ground texture, the
   azimuth slider range and the map marker follow the site. Cape Canaveral stays default.
-- [ ] **T5 — Career mode (money).** New menu entry "Career". Start with $250M. Each launch
-  costs hardware (sum of `dry` tonnes × $1.2M/t for liquid stages, $0.4M/t for solids) plus
-  propellant (from the shipping manifest, $2k/t kerolox, $6k/t hydrolox, $1.5k/t methalox,
-  $25k/t hypergolic). Missions pay a `reward` (add to each mission in
-  `src/data/missions.js`, $20M–$400M by difficulty). Failed launches pay nothing. Reusable
-  boosters that land refund 60% of their stage cost. Balance persists in localStorage;
-  show it on the menu and results screens.
 - [ ] **T6 — Replay export.** Record the flight track (`sim.track` plus events) and add a
   "Download telemetry CSV" and "Download mission card PNG" (canvas-rendered summary:
   vehicle, orbit, score, map thumbnail) to the results screen.
@@ -76,3 +69,5 @@ if (fails) { console.error(fails + ' vehicles failed to reach orbit'); process.e
 ## Done
 
 (The routine moves finished tickets here with the commit hash.)
+
+- [x] **T5 — Career mode (money).** Career menu entry with a persisted $250M balance (`src/data/career.js`), per-launch hardware+propellant cost charged at release, mission `reward`s, 60% refund for landed reusable stages, funds check before shipping and on restart, finances panel on the results screen.

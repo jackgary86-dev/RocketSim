@@ -1,6 +1,7 @@
 import { ROCKETS, CLASSES } from '../data/rockets.js';
 import { PROPELLANTS, LIQUIDS, UPGRADE_INFO, vehicleStats, buildVehicle } from '../data/config.js';
 import { MISSIONS } from '../data/missions.js';
+import { career, fmtMoney } from '../data/career.js';
 import { fmtTime } from '../sim/math.js';
 import * as U from './units.js';
 
@@ -48,6 +49,8 @@ export class UI {
         <h1>ROCKETSIM</h1>
         <div class="sub">LAUNCH OPERATIONS SIMULATOR · LC-39A</div>
         <button class="primary" data-a="free">▶ Free Play — pick any of 20 vehicles</button>
+        <button data-a="career">$ Career — balance ${fmtMoney(career.balance)}</button>
+        ${career.balance < 5 ? '<button class="danger" data-a="resetCareer">↺ Restart career (out of funds)</button>' : ''}
         <button data-a="missions">◎ Missions — ${done}/${MISSIONS.length} complete</button>
         <button data-a="settings">⚙ Settings &amp; Difficulty</button>
         <button data-a="controls">⌨ Controls</button>
@@ -96,13 +99,13 @@ export class UI {
     this.show('settings');
   }
 
-  missions(progress, onPick, onBack) {
+  missions(progress, onPick, onBack, careerInfo) {
     const s = this.screen('missions', `
       <div class="full">
-        <div class="head"><h2>Missions</h2><button data-a="back">Back</button></div>
+        <div class="head"><h2>${careerInfo ? `Career — balance ${fmtMoney(careerInfo.balance)}` : 'Missions'}</h2><button data-a="back">Back</button></div>
         <div class="body"><div class="cards">${MISSIONS.map((m) => {
           const c = progress.completed[m.id];
-          return `<div class="card ${c ? 'done' : ''}" data-id="${m.id}"><div class="name">${m.name}</div><div class="meta">${m.rocketClass ? clsTag(m.rocketClass) : '<span class="tag">any class</span>'} ${c ? `<span class="green">best ${c.score}</span>` : ''}</div><div>${esc(m.brief)}</div></div>`;
+          return `<div class="card ${c ? 'done' : ''}" data-id="${m.id}"><div class="name">${m.name}</div><div class="meta">${m.rocketClass ? clsTag(m.rocketClass) : '<span class="tag">any class</span>'} ${c ? `<span class="green">best ${c.score}</span>` : ''} ${careerInfo ? `<span class="tag">pays ${fmtMoney(m.reward)}</span>` : ''}</div><div>${esc(m.brief)}</div></div>`;
         }).join('')}</div></div>
         <div class="foot"><span class="muted">Select a mission to choose a vehicle for it.</span></div>
       </div>`);
@@ -439,6 +442,7 @@ export class UI {
       <div class="dim"></div>
       <div class="results panel"><div class="row spread"><div><h2>${mission ? esc(mission.name) : 'Free flight'} — ${result.success ? '<span class="green">SUCCESS</span>' : '<span class="red">OBJECTIVES NOT MET</span>'}</h2><div class="muted">${esc(vehicle.name)} · ${sim.status.toUpperCase()}</div></div><div class="score">${result.score}<div class="muted" style="font-size:11px">SCORE</div></div></div>
         <div class="lines">${result.lines.map((l) => `<div class="${l.ok ? 'ok' : 'fail'}"><span>${esc(l.label)}</span><span>${esc(l.text)}</span></div>`).join('')}</div>
+        ${result.money ? `<h3>Career finances</h3><div class="kv"><span>Launch cost</span><span class="red">−${fmtMoney(result.money.cost)}</span><span>Mission reward</span><span class="${result.money.payout ? 'green' : ''}">${result.money.payout ? '+' : ''}${fmtMoney(result.money.payout)}</span><span>Booster recovery refund</span><span>${fmtMoney(result.money.refund)}</span><span>Balance</span><span>${fmtMoney(result.money.balance)}</span></div>` : ''}
         <h3>Flight statistics</h3>
         <div class="kv"><span>Max altitude</span><span>${U.alt(st.maxAlt)}</span><span>Max speed</span><span>${U.speed(st.maxSpeed)}</span><span>Max-Q</span><span>${U.press(st.maxQ)} at ${fmtTime(st.maxQt)}</span><span>Max acceleration</span><span>${st.maxG.toFixed(2)} g</span><span>Δv expended</span><span>${(st.dvUsed / 1000).toFixed(2)} km/s</span><span>Final orbit</span><span>${el.apoapsis === Infinity ? '∞' : U.alt(el.apoapsis)} × ${U.alt(el.periapsis)}, ${el.inc.toFixed(1)}°</span><span>Downrange</span><span>${U.dist(sim.tel.downrange)}</span></div>
         <div class="row" style="margin-top:14px"><button class="primary" data-a="continue" ${sim.status === 'orbit' ? '' : 'disabled'}>Continue in orbit</button><button data-a="again">Fly again</button><button data-a="menu">Main menu</button></div>
