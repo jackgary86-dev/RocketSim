@@ -1,6 +1,7 @@
 import { ROCKETS } from './data/rockets.js';
 import { DEFAULT_CONFIG, buildVehicle, vehicleStats } from './data/config.js';
 import { MISSIONS, evaluate, progress, settings } from './data/missions.js';
+import { career, launchCost, refundFor, fmtMoney } from './data/career.js';
 import { FlightSim, LAUNCH_SITE } from './sim/flight.js';
 import { DeliverySequence } from './sim/delivery.js';
 import { FuelingSequence } from './sim/fueling.js';
@@ -16,7 +17,8 @@ const WARPS = [1, 2, 4, 10, 25, 50];
 
 class App {
   constructor() {
-    settings.load(); progress.load();
+    settings.load(); progress.load(); career.load();
+    this.careerMode = false;
     units.system = settings.data.units;
     this.ui = new UI(document.getElementById('ui'));
     this.view = new View(document.getElementById('gl'));
@@ -44,12 +46,15 @@ class App {
   showMenu() {
     this.state = 'menu';
     this.sim = null;
+    this.careerMode = false;
     this.mapToggle(false);
     this.audio.setEngine(0, 0);
     this.audio.stopVoice();
     const menuRocket = ROCKETS[Math.floor(Math.random() * ROCKETS.length)];
     this.view.setVehicle(buildVehicle(menuRocket, DEFAULT_CONFIG));
     this.ui.menu(progress.data, {
+      career: () => { this.careerMode = true; this.ui.missions(progress.data, (m) => { this.mission = m; this.showRockets(); }, () => this.showMenu(), { balance: career.balance }); },
+      resetCareer: () => { career.reset(); this.showMenu(); this.ui.toast(`Career restarted with ${fmtMoney(career.balance)}`); },
       free: () => { this.mission = null; this.showRockets(); },
       missions: () => this.ui.missions(progress.data, (m) => { this.mission = m; this.showRockets(); }, () => this.showMenu()),
       settings: () => this.ui.settings(settings.data, (d) => { settings.save(); units.system = d.units; }, () => this.showMenu()),
@@ -81,8 +86,16 @@ class App {
   showConfig() {
     this.state = 'config';
     const refresh = () => { this.vehicle = buildVehicle(this.rocket, this.cfg); this.ui.configStats(this.vehicle, vehicleStats(this.vehicle)); this.view.setVehicle(this.vehicle); };
-    this.ui.config(this.rocket, this.cfg, { change: refresh, next: () => this.startDelivery(), back: () => this.showFuel() });
+    this.ui.config(this.rocket, this.cfg, { change: refresh, next: () => this.confirmCareerFunds() && this.startDelivery(), back: () => this.showFuel() });
     refresh();
+  }
+
+  /** In career mode a launch must be affordable before hardware is shipped. */
+  confirmCareerFunds() {
+    if (!this.careerMode) return true;
+    const cost = launchCost(buildVehicle(this.rocket, this.cfg)).total;
+    if (!career.canAfford(cost)) { this.ui.toast(`Insufficient funds: launch costs ${fmtMoney(cost)}, balance ${fmtMoney(career.balance)}`, 5000); return false; }
+    return true;
   }
 
   startDelivery() {
@@ -154,6 +167,11 @@ class App {
 
   startFlight() {
     this.state = 'flight';
+    if (this.careerMode) {
+      this.launchCost = launchCost(this.vehicle).total;
+      career.charge(this.launchCost);
+      this.ui.toast(`Launch cost ${fmtMoney(this.launchCost)} — balance ${fmtMoney(career.balance)}`, 4000);
+    }
     this.spokenEvents = this.sim.events.length;
     this.warpIdx = 0;
     this.paused = false;
@@ -188,13 +206,28 @@ class App {
   }
 
   restartLaunch() {
+    if (this.careerMode && !career.canAfford(launchCost(this.vehicle).total)) {
+      this.ui.toast(`Insufficient funds for another launch (${fmtMoney(career.balance)})`, 5000);
+      this.showMenu();
+      return;
+    }
     this.view.setVehicle(this.vehicle);
     this.startPrecheck();
   }
 
   showResults() {
     const result = evaluate(this.mission, this.sim, this.vehicle, settings.data.difficulty);
-    if (!this.resultsRecorded) { progress.record(this.mission?.id, result, this.rocket.id); this.resultsRecorded = true; }
+    if (!this.resultsRecorded) {
+      progress.record(this.mission?.id, result, this.rocket.id);
+      this.resultsRecorded = true;
+      if (this.careerMode) {
+        const payout = result.success && this.mission ? this.mission.reward : 0;
+        const refund = refundFor(this.vehicle, this.sim);
+        career.credit(payout + refund);
+        this.money = { cost: this.launchCost, payout, refund, balance: career.balance };
+      }
+    }
+    result.money = this.careerMode ? this.money : null;
     this.state = 'results';
     this.mapToggle(false);
     this.ui.results(result, this.sim, this.vehicle, this.mission, {
