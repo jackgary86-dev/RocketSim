@@ -33,11 +33,6 @@ if (fails) { console.error(fails + ' vehicles failed to reach orbit'); process.e
 
 ## Backlog (in priority order)
 
-- [ ] **T2 — Cosmetic fixes.** (a) Rollout erection: rotate about the vehicle base so the
-  base stays on the transporter until vertical, then settles on the mount
-  (`rolloutPose` in `src/render/scene.js`). (b) Shuttle orbiter: wings should sit on the
-  bottom of the fuselage and the orbiter should point nose-up along the tank.
-  (c) Pad tracking camera: avoid the tower occluding the vehicle for the first 10 s.
 - [ ] **T3 — Scrub detank polish.** When a scrub is called during the terminal count after
   ignition, show an "engine shutdown — pad safing" message, shut the plume off over 1 s and
   keep the vehicle on the pad. After detank, "Recycle" must restart fueling with fresh
@@ -72,4 +67,5 @@ if (fails) { console.error(fails + ' vehicles failed to reach orbit'); process.e
 
 ## Done
 
+- [x] **T2 — Cosmetic fixes.** Rollout erection now pivots about the vehicle base (transporter fixed under the hinge, backs away, base settles on the mount); Shuttle orbiter re-oriented belly-in against the tank with wings along ±Z and a vertical tail; SRBs sit at ±Z; pad camera moved to the +X side so the tower never overlaps the vehicle (checked for all 20 vehicles). Verified: build passes, 20/20 orbit.
 - [x] **T1 — Fictional vehicle name set.** `names` setting (fictional | real, default fictional) with a Settings toggle; original names for all 20 vehicles in `src/data/fictional.js`; every UI / voice / map / livery label goes through `displayName` / `displayMaker` in `src/data/names.js`. Verified: build passes, 20/20 vehicles reach orbit.

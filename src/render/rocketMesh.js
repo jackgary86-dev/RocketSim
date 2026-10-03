@@ -217,7 +217,7 @@ export class RocketModel {
       let slot = v.boosters.slice(0, j).reduce((n, x) => n + x.count, 0);
       for (let k = 0; k < b.count; k++) {
         const g = new THREE.Group();
-        const a = ((slot++) / totalAround) * Math.PI * 2 + Math.PI / 4;
+        const a = ((slot++) / totalAround) * Math.PI * 2 + (v.nose === 'shuttle' ? Math.PI / 2 : Math.PI / 4);
         const rad = d0 / 2 + b.d / 2 + 0.05;
         g.position.set(Math.cos(a) * rad, -0.5, Math.sin(a) * rad);
         const bodyLen = b.len;
@@ -362,19 +362,21 @@ export class RocketModel {
     fus.position.y = L / 2; g.add(fus);
     const noseM = new THREE.Mesh(ogiveGeometry(fd / 2, 6, 24), black);
     noseM.position.y = L; g.add(noseM);
-    const bay = new THREE.Mesh(new THREE.BoxGeometry(fd * 0.9, L * 0.55, fd * 0.6), white);
-    bay.position.set(0, L * 0.5, fd * 0.3); g.add(bay);
+    // The orbiter rides belly-in against the tank: belly toward -X, payload bay / tail toward +X,
+    // wings spread along +/-Z, nose up.
+    const bay = new THREE.Mesh(new THREE.BoxGeometry(fd * 0.55, L * 0.55, fd * 0.8), white);
+    bay.position.set(fd * 0.3, L * 0.5, 0); g.add(bay);
     const wing = new THREE.Shape();
     wing.moveTo(0, 0); wing.lineTo(12, 0); wing.lineTo(12, 4); wing.lineTo(1.5, 20); wing.lineTo(0, 20); wing.closePath();
     const wgeo = new THREE.ExtrudeGeometry(wing, { depth: 0.5, bevelEnabled: false });
     for (const s of [1, -1]) {
       const w = new THREE.Mesh(wgeo, black);
-      w.rotation.x = -Math.PI / 2; w.rotation.z = s < 0 ? Math.PI : 0;
-      w.position.set(s * fd * 0.4, 1.5, fd * 0.4);
+      w.rotation.y = s > 0 ? -Math.PI / 2 : Math.PI / 2;   // span along +/-Z, thin along X
+      w.position.set(-fd * 0.45, 1.5, 0);
       g.add(w);
     }
-    const tail = new THREE.Mesh(new THREE.BoxGeometry(0.5, 8, 5), white);
-    tail.position.set(0, 3, fd * 0.9 + 2); g.add(tail);
+    const tail = new THREE.Mesh(new THREE.BoxGeometry(7, 8, 0.5), white);
+    tail.position.set(fd / 2 + 2.2, 4.5, 0); g.add(tail);
     const E = 3;
     for (const [px, pz] of enginePositions(3, fd)) {
       const noz = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 1.2, E, 16, 1, true), nozzleMat);

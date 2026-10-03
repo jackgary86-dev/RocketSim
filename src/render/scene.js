@@ -152,7 +152,7 @@ export class View {
       b.position.set(-2800 - Math.random() * 1500, b.geometry.parameters.height / 2, 1800 + Math.random() * 2200);
       P.add(b);
     }
-    this.transporter = new THREE.Mesh(new THREE.BoxGeometry(60, 3, 14), dark);
+    this.transporter = new THREE.Mesh(new THREE.BoxGeometry(14, 3, 60), dark);
     this.transporter.visible = false; P.add(this.transporter);
     this.padLights = [];
   }
@@ -234,7 +234,7 @@ export class View {
     this.rocketGroup.quaternion.identity();
     this.vehicle = vehicle;
     this.mount.scale.set(Math.max(1, vehicle.diameter / 8), 1, Math.max(1, vehicle.diameter / 8));
-    this.transporter.scale.set(Math.max(0.5, vehicle.height / 60), 1, Math.max(0.6, vehicle.diameter / 6));
+    this.transporter.scale.set(Math.max(0.6, vehicle.diameter / 6), 3, Math.max(0.3, (vehicle.height * 0.9) / 60));
   }
 
   resize() {
@@ -245,24 +245,31 @@ export class View {
     this.camera.updateProjectionMatrix();
   }
 
-  /** Vehicle pose on the crawlerway/erection for rollout progress p in [0,1]. */
+  /**
+   * Vehicle pose for rollout progress p in [0,1] (the returned pos is the vehicle BASE).
+   * Phase 1: the vehicle lies on the transporter, base leading, rolling to the pad.
+   * Phase 2: it pivots about its base (which stays on the transporter hinge) until
+   * vertical, the transporter backs away, then the base settles onto the launch mount.
+   */
   rolloutPose(p) {
     const H = this.vehicle.height, D = this.vehicle.diameter;
     const ease = (t) => t * t * (3 - 2 * t);
-    const yHoriz = D / 2 + 3 + GROUND_Y;
+    const hHinge = D / 2 + 1;               // axis height; clears the mount top (world y = 0)
+    const X = new THREE.Vector3(1, 0, 0);
     const q = new THREE.Quaternion();
     const pos = new THREE.Vector3();
     if (p < 0.72) {
       const zc = 690 * (1 - ease(p / 0.72));
-      pos.set(0, yHoriz, zc + H / 2);
-      q.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
-      return { pos, q, transporterZ: zc, erecting: false };
+      pos.set(0, hHinge, zc);
+      q.setFromAxisAngle(X, Math.PI / 2);   // axis +Y -> +Z (nose toward the hangar)
+      return { pos, q, transporterZ: zc + H / 2, erecting: false };
     }
     const f = ease((p - 0.72) / 0.28);
-    const ang = -Math.PI / 2 * (1 - f);
-    q.setFromAxisAngle(new THREE.Vector3(1, 0, 0), ang);
-    pos.set(0, lerp(yHoriz, 0, f), lerp(H / 2, 0, f));
-    return { pos, q, transporterZ: 0, erecting: true };
+    const g = Math.min(1, f / 0.85);        // 0..1 rotation, finished at f = 0.85
+    const settle = Math.max(0, (f - 0.85) / 0.15);
+    q.setFromAxisAngle(X, (Math.PI / 2) * (1 - g));
+    pos.set(0, lerp(hHinge, 0, settle), 0);
+    return { pos, q, transporterZ: H / 2 + g * 220, erecting: true };
   }
 
   // ---------- per-frame ----------
@@ -296,7 +303,7 @@ export class View {
       const pose = this.rolloutPose(mode === 'build' ? 0 : ctx.progress ?? 0);
       rocketPos.copy(pose.pos); q.copy(pose.q);
       this.transporter.visible = true;
-      this.transporter.position.set(0, 1.5, pose.transporterZ);
+      this.transporter.position.set(0, 4.5, pose.transporterZ);
       model.setActiveStage(0);
       model.setVent(0, this.time);
       sim && 0;
@@ -367,7 +374,7 @@ export class View {
       const p = center.clone().addScaledVector(vdir, -dist).addScaledVector(new THREE.Vector3(0, 1, 0), dist * 0.25).addScaledVector(side, dist * 0.35);
       this.camPos.lerp(p, k); this.camTarget.lerp(center, k);
     } else if (mode === 'pad') {
-      const p = new THREE.Vector3(-H * 1.2 - 80, 22 + GROUND_Y + 8, H * 3.2 + 220).add(this.world.position);
+      const p = new THREE.Vector3(H * 0.25, 22 + GROUND_Y + 8, H * 3.2 + 220).add(this.world.position);
       this.camPos.copy(p); this.camTarget.lerp(center, k * 2);
       const dist = p.distanceTo(center);
       fov = clamp((2 * Math.atan((H * 1.8) / dist) * 180) / Math.PI, 1.2, 45);
