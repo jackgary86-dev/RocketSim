@@ -5,7 +5,15 @@ import {
 } from './math.js';
 import { PROPELLANTS } from '../data/config.js';
 
-export const LAUNCH_SITE = { name: 'Launch Complex 39A — Cape Canaveral', short: 'LC-39A', lat: 28.6084, lon: -80.6043 };
+// sea: side of the pad (pad-local) that the ocean lies on, or null for an inland site.
+export const LAUNCH_SITES = [
+  { id: 'cape', name: 'Launch Complex 39A — Cape Canaveral', short: 'LC-39A', place: 'the Cape', lat: 28.6084, lon: -80.6043, sea: 'east', azRange: [35, 120], azDefault: 90 },
+  { id: 'vandenberg', name: 'Space Launch Complex 4E — Vandenberg', short: 'SLC-4E', place: 'Vandenberg', lat: 34.632, lon: -120.611, sea: 'west', azRange: [140, 200], azDefault: 180 },
+  { id: 'kourou', name: 'ELA-4 — Guiana Space Centre, Kourou', short: 'ELA-4', place: 'Kourou', lat: 5.239, lon: -52.768, sea: 'east', azRange: [10, 100], azDefault: 90 },
+  { id: 'baikonur', name: 'Site 31 — Baikonur Cosmodrome', short: 'Site 31', place: 'Baikonur', lat: 45.996, lon: 63.564, sea: null, azRange: [35, 100], azDefault: 62 },
+];
+export const LAUNCH_SITE = LAUNCH_SITES[0];
+export const getSite = (id) => LAUNCH_SITES.find((s) => s.id === id) || LAUNCH_SITE;
 
 const QALPHA_WARN = 150000;  // Pa·deg
 const QALPHA_LIMIT = 260000; // Pa·deg — structural limit in the dense atmosphere

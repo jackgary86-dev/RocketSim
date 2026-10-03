@@ -3,6 +3,7 @@ import { PROPELLANTS, LIQUIDS, UPGRADE_INFO, vehicleStats, buildVehicle } from '
 import { MISSIONS } from '../data/missions.js';
 import { fmtTime } from '../sim/math.js';
 import * as U from './units.js';
+import { LAUNCH_SITES, getSite } from '../sim/flight.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const clsTag = (c) => `<span class="tag ${c === 'Super Heavy' ? 'super' : c.toLowerCase()}">${c}</span>`;
@@ -184,16 +185,23 @@ export class UI {
             ${tog('composites', 'Composite structures', [[false, 'Aluminium'], [true, 'Composite']])}
             ${tog('controlFins', 'Control surfaces', [['none', 'None'], ['aero', 'Fins'], ['grid', 'Grid fins']])}
             <h3>Mission</h3>
+            <div class="opt"><label>Launch site</label><div class="toggle" data-key="site">${LAUNCH_SITES.map((st) => `<button class="${cfg.site === st.id ? 'on' : ''}" data-v="${st.id}">${st.place === 'the Cape' ? 'Cape' : st.place}</button>`).join('')}</div><span></span><div class="hint">${UPGRADE_INFO.site}</div></div>
             ${slider('payloadPct', 'Payload mass', 10, 120, 5, '%')}
             ${slider('targetAlt', 'Target orbit altitude', 160, 1200, 10, ' km')}
-            ${slider('azimuth', 'Launch azimuth', 35, 120, 1, '°')}
+            ${slider('azimuth', 'Launch azimuth', getSite(cfg.site).azRange[0], getSite(cfg.site).azRange[1], 1, '°')}
           </div>
           <div class="panel" id="cfg-stats"></div>
         </div></div>
-        <div class="foot"><span class="muted" id="cfg-warn"></span><button class="primary" data-a="next">Build &amp; ship to the Cape ›</button></div>
+        <div class="foot"><span class="muted" id="cfg-warn"></span><button class="primary" data-a="next">Build &amp; ship to ${esc(getSite(cfg.site).place)} ›</button></div>
       </div>`);
     this.on(s, 'input[type=range]', 'input', (e) => { const k = e.target.dataset.key; cfg[k] = +e.target.value; s.querySelector(`[data-val=${k}]`).textContent = e.target.value + (k === 'targetAlt' ? ' km' : k === 'azimuth' ? '°' : k === 'extraBoosters' ? '' : '%'); h.change(); });
-    this.on(s, '.toggle button', 'click', (e) => { const key = e.currentTarget.parentElement.dataset.key; let v = e.currentTarget.dataset.v; if (v === 'true') v = true; if (v === 'false') v = false; cfg[key] = v; e.currentTarget.parentElement.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b === e.currentTarget)); h.change(); });
+    this.on(s, '.toggle button', 'click', (e) => { const key = e.currentTarget.parentElement.dataset.key; let v = e.currentTarget.dataset.v; if (v === 'true') v = true; if (v === 'false') v = false; cfg[key] = v;
+      if (key === 'site') {
+        const st = getSite(v), az = s.querySelector('input[data-key=azimuth]');
+        az.min = st.azRange[0]; az.max = st.azRange[1]; cfg.azimuth = st.azDefault; az.value = cfg.azimuth;
+        s.querySelector('[data-val=azimuth]').textContent = cfg.azimuth + '°';
+        s.querySelector('[data-a=next]').textContent = `Build & ship to ${st.place} ›`;
+      } e.currentTarget.parentElement.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b === e.currentTarget)); h.change(); });
     this.on(s, '[data-a=next]', 'click', h.next);
     this.on(s, '[data-a=back]', 'click', h.back);
     this.show('config');
@@ -221,7 +229,7 @@ export class UI {
   delivery(seq, vehicle, h) {
     const s = this.screen('delivery', `
       <div class="delivery">
-        <div class="panel"><h2>Shipping to LC-39A — ${esc(vehicle.name)}</h2>${steps('Shipping')}<div class="bar" style="margin-top:10px"><i id="dl-bar" style="width:0%"></i></div>
+        <div class="panel"><h2>Shipping to ${esc(getSite(vehicle.site).short)} — ${esc(vehicle.name)}</h2>${steps('Shipping')}<div class="bar" style="margin-top:10px"><i id="dl-bar" style="width:0%"></i></div>
           <div class="row spread" style="margin-top:6px;font-size:11px"><span class="muted" id="dl-count"></span><span class="muted" id="dl-mass"></span></div></div>
         <div class="current" id="dl-current"><div class="muted">Loading manifest…</div></div>
         <div class="manifest" id="dl-list">${seq.items.map((it, i) => `<div data-i="${i}" class="${it.hazmat ? 'hazmat' : ''}"><span>${it.icon} ${esc(it.title)}</span><span>${U.massT(it.mass)}</span></div>`).join('')}</div>
@@ -248,7 +256,7 @@ export class UI {
   // ---------------- rollout / pad ----------------
   rollout(vehicle, h) {
     const s = this.screen('rollout', `
-      <div class="progress panel"><h2>Rollout to Launch Complex 39A</h2>${steps('Rollout')}<div class="bar"><i id="ro-bar" style="width:0%"></i></div><div class="muted" id="ro-text" style="margin-top:6px">Transporter departing the integration facility</div></div>
+      <div class="progress panel"><h2>Rollout to ${esc(getSite(vehicle.site).name)}</h2>${steps('Rollout')}<div class="bar"><i id="ro-bar" style="width:0%"></i></div><div class="muted" id="ro-text" style="margin-top:6px">Transporter departing the integration facility</div></div>
       <div class="hint-bar"><button data-a="skip">Skip ›</button></div>`);
     this.on(s, '[data-a=skip]', 'click', h.skip);
     this.show('rollout');

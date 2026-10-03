@@ -48,6 +48,7 @@ export const DEFAULT_CONFIG = {
   payloadPct: 100,        // % of the vehicle's default payload
   targetAlt: 250,         // km
   azimuth: 90,            // launch azimuth, degrees from north
+  site: 'cape',           // launch site id (see LAUNCH_SITES)
 };
 
 export const UPGRADE_INFO = {
@@ -59,6 +60,7 @@ export const UPGRADE_INFO = {
   controlFins: 'Aerodynamic control surfaces. Grid fins give the most authority in the lower atmosphere.',
   payloadPct: 'A lighter payload leaves more Δv for a higher or longer trajectory.',
   targetAlt: 'Circular orbit altitude the autopilot aims for.',
+  site: 'Launch site. Latitude sets the free Earth-rotation boost and which azimuths clear populated land.',
   azimuth: 'Launch heading. 90° (due east) gains the most from Earth\'s rotation.',
 };
 
@@ -114,6 +116,7 @@ export function buildVehicle(rocket, cfg = DEFAULT_CONFIG) {
   v.stages[0].dry *= 1 + finMass;
   v.targetAlt = cfg.targetAlt * 1000;
   v.azimuth = cfg.azimuth;
+  v.site = cfg.site || 'cape';
   return v;
 }
 
