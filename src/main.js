@@ -11,6 +11,7 @@ import { WorldMap } from './render/map.js';
 import { AudioSystem } from './render/audio.js';
 import { UI } from './ui/ui.js';
 import { units, toggleUnits } from './ui/units.js';
+import { Tutorial } from './ui/tutorial.js';
 
 const WARPS = [1, 2, 4, 10, 25, 50];
 
@@ -40,8 +41,19 @@ class App {
     requestAnimationFrame((t) => this.frame(t));
   }
 
+  // ---------------- tutorial ----------------
+  /** Start or stop the guided callouts depending on the selected mission. */
+  setupTutorial() {
+    if (this.tutorial) { this.tutorial.destroy(); this.tutorial = null; }
+    if (this.mission?.tutorial) this.tutorial = new Tutorial(this.ui.root);
+  }
+  tut(id) { if (this.tutorial) this.tutorial.show(id); }
+  get failuresOn() { return this.mission?.tutorial ? false : settings.data.failures; }
+  get difficulty() { return this.mission?.tutorial ? 'normal' : settings.data.difficulty; }
+
   // ---------------- screens ----------------
   showMenu() {
+    if (this.tutorial) { this.tutorial.destroy(); this.tutorial = null; }
     this.state = 'menu';
     this.sim = null;
     this.mapToggle(false);
@@ -50,8 +62,8 @@ class App {
     const menuRocket = ROCKETS[Math.floor(Math.random() * ROCKETS.length)];
     this.view.setVehicle(buildVehicle(menuRocket, DEFAULT_CONFIG));
     this.ui.menu(progress.data, {
-      free: () => { this.mission = null; this.showRockets(); },
-      missions: () => this.ui.missions(progress.data, (m) => { this.mission = m; this.showRockets(); }, () => this.showMenu()),
+      free: () => { this.mission = null; this.setupTutorial(); this.showRockets(); },
+      missions: () => this.ui.missions(progress.data, (m) => { this.mission = m; this.setupTutorial(); if (m.tutorial) { this.rocket = ROCKETS.find((r) => r.id === 'falcon9') || this.rocket; this.cfg = { ...DEFAULT_CONFIG }; } this.showRockets(); }, () => this.showMenu()),
       settings: () => this.ui.settings(settings.data, (d) => { settings.save(); units.system = d.units; }, () => this.showMenu()),
       controls: () => this.ui.controls(() => this.showMenu()),
     });
@@ -66,6 +78,7 @@ class App {
     };
     this.ui.rockets(this.rocket?.id, this.mission, h);
     if (this.rocket) this.view.setVehicle(buildVehicle(this.rocket, this.cfg));
+    this.tut('rocket');
   }
 
   showFuel() {
@@ -76,6 +89,7 @@ class App {
       back: () => this.showRockets(),
     };
     this.ui.fuel(this.rocket, this.cfg, h);
+    this.tut('fuel');
   }
 
   showConfig() {
@@ -83,6 +97,7 @@ class App {
     const refresh = () => { this.vehicle = buildVehicle(this.rocket, this.cfg); this.ui.configStats(this.vehicle, vehicleStats(this.vehicle)); this.view.setVehicle(this.vehicle); };
     this.ui.config(this.rocket, this.cfg, { change: refresh, next: () => this.startDelivery(), back: () => this.showFuel() });
     refresh();
+    this.tut('config');
   }
 
   startDelivery() {
@@ -90,6 +105,7 @@ class App {
     this.view.setVehicle(this.vehicle);
     this.delivery = new DeliverySequence(this.vehicle);
     this.state = 'delivery';
+    this.tutorial?.hide();
     this.ui.delivery(this.delivery, this.vehicle, { skip: () => { this.delivery.skip(); } });
     this.audio.say(`Shipping ${this.vehicle.name} hardware and propellant to the Cape.`);
   }
@@ -100,6 +116,7 @@ class App {
     this.rolloutDur = 16;
     this.ui.rollout(this.vehicle, { skip: () => { this.rolloutT = this.rolloutDur; } });
     this.audio.say('Rollout to launch complex 39 A.');
+    if (this.tutorial) this.tutorial.hide();
   }
 
   showPad() {
@@ -109,13 +126,14 @@ class App {
 
   startFueling() {
     this.state = 'fueling';
-    this.fueling = new FuelingSequence(this.vehicle, { failures: settings.data.failures });
+    this.fueling = new FuelingSequence(this.vehicle, { failures: this.failuresOn });
     this.fuelLogSpoken = 0;
     const f = this.fueling;
     this.ui.fueling(f, {
       vents: () => f.openVents(), all: () => f.startAll(), tank: (id) => f.startTank(id), press: () => f.pressurize(), arm: () => f.arm(), resume: () => f.resumeHold(),
       scrub: () => this.scrub('Operator scrub during propellant load'),
     });
+    this.tut('fueling');
   }
 
   scrub(reason) {
@@ -133,8 +151,8 @@ class App {
 
   startPrecheck() {
     this.state = 'precheck';
-    this.prelaunch = new PrelaunchSequence({ failures: settings.data.failures });
-    this.sim = new FlightSim(this.vehicle, { failures: settings.data.failures });
+    this.prelaunch = new PrelaunchSequence({ failures: this.failuresOn });
+    this.sim = new FlightSim(this.vehicle, { failures: this.failuresOn });
     this.applyDifficulty();
     const p = this.prelaunch;
     this.ui.precheck(p, {
@@ -143,10 +161,11 @@ class App {
       scrub: () => this.scrub('Scrub called during the count'),
     });
     this.audio.say('Beginning safety and pre-launch checks.');
+    this.tut('checks');
   }
 
   applyDifficulty() {
-    const d = settings.data.difficulty;
+    const d = this.difficulty;
     this.sim.autopilot = d !== 'hard';
     this.sim.autoStage = d === 'easy';
     if (d === 'hard') this.sim.manualBase = { pitch: 90, heading: this.vehicle.azimuth };
@@ -164,6 +183,8 @@ class App {
       stage: () => this.sim.separate(), auto: () => this.sim.setAutopilot(!this.sim.autopilot), camera: () => this.cycleCamera(),
       map: () => this.mapToggle(!this.mapOpen), warp: (d) => this.warp(d), pause: () => this.pauseToggle(),
     });
+    this.tutorial?.hide();
+    this.tut('liftoff');
   }
 
   cycleCamera() { const m = this.view.cycleCamera(); this.ui.toast(`Camera: ${m}`); }
@@ -193,7 +214,7 @@ class App {
   }
 
   showResults() {
-    const result = evaluate(this.mission, this.sim, this.vehicle, settings.data.difficulty);
+    const result = evaluate(this.mission, this.sim, this.vehicle, this.difficulty);
     if (!this.resultsRecorded) { progress.record(this.mission?.id, result, this.rocket.id); this.resultsRecorded = true; }
     this.state = 'results';
     this.mapToggle(false);
@@ -236,7 +257,7 @@ class App {
     const pitch = (this.keys['w'] ? -1 : 0) + (this.keys['s'] ? 1 : 0);
     const yaw = (this.keys['d'] ? 1 : 0) + (this.keys['a'] ? -1 : 0);
     s.input.pitch = pitch; s.input.yaw = yaw;
-    if ((pitch || yaw) && s.autopilot && settings.data.difficulty !== 'easy') { s.setAutopilot(false); this.ui.toast('Manual control — press T to re-engage autopilot'); }
+    if ((pitch || yaw) && s.autopilot && this.difficulty !== 'easy') { s.setAutopilot(false); this.ui.toast('Manual control — press T to re-engage autopilot'); }
     if (this.keys['e']) s.setThrottle(s.throttleCmd + dt * 0.6);
     if (this.keys['q']) s.setThrottle(s.throttleCmd - dt * 0.6);
   }
@@ -285,6 +306,7 @@ class App {
       const p = this.prelaunch;
       p.update(dt);
       this.ui.updatePrecheck(p);
+      if (p.phase === 'authorize') this.tut('authorize');
       while (p.events.length) {
         const ev = p.events.shift();
         if (ev === 'ignite') { this.sim.t = -3; this.ignited = true; }
@@ -304,6 +326,7 @@ class App {
         if (s.tel.alt < 120000 && s.status === 'ascent') warp = Math.min(warp, 4);
         s.advance(dt, warp);
         this.speakEvents();
+        this.tutorialFlightHints(s);
         const ended = ['crashed', 'breakup', 'landed'].includes(s.status) || (s.status === 'suborbital' && s.tel.alt < 0);
         const orbitJustNow = s.status === 'orbit' && !this.resultsShown && !s.debris.some((d) => d.alive && d.reusable);
         if ((ended && !this.resultsShown) || orbitJustNow) { this.resultsShown = true; this.showResults(); }
@@ -317,6 +340,14 @@ class App {
       if (this.mapOpen) this.drawMap();
     }
     this.view.update(dt, ctx);
+  }
+
+  tutorialFlightHints(s) {
+    if (!this.tutorial) return;
+    if (s.stageState === 'burnout' && !s.isFinalStage) this.tut('stage');
+    else if (s.t > 25 && !this.tutorial.seen.has('map') && this.tutorial.seen.has('stage')) this.tut('map');
+    else if (s.t > 100 && !this.tutorial.seen.has('map')) this.tut('map');
+    if (s.status === 'orbit') this.tut('orbit');
   }
 
   speakEvents() {

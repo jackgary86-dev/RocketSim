@@ -1,6 +1,7 @@
 // Mission list, objective evaluation, scoring and browser-saved progress.
 
 export const MISSIONS = [
+  { id: 'tutorial', name: 'Tutorial — First Flight', brief: 'A guided launch: fuel, checks, authorize, stage and map. Reach orbit with callouts at every step (normal difficulty, no random failures).', rocketClass: null, tutorial: true, goals: { orbit: true } },
   { id: 'first-orbit', name: 'First Orbit', brief: 'Put any payload into a stable orbit with a perigee above 150 km.', rocketClass: null, goals: { orbit: true } },
   { id: 'smallsat', name: 'Smallsat Rideshare', brief: 'Use a Small-class launcher to reach a 500 km circular orbit.', rocketClass: 'Small', goals: { orbit: true, alt: [470, 530] } },
   { id: 'station', name: 'Station Resupply', brief: 'Deliver at least 3 t of cargo to a 410 km orbit inclined 51.6°.', rocketClass: null, goals: { orbit: true, alt: [390, 430], inc: [50.6, 52.6], payload: 3 } },

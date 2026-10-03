@@ -189,3 +189,10 @@ input[type=range] { width: 100%; accent-color: var(--cyan); }
 .progress .bar { height: 10px; margin-top: 8px; }
 .toast { position: absolute; left: 50%; top: 70px; transform: translateX(-50%); background: var(--panel-2); border: 1px solid var(--cyan); padding: 8px 18px; color: #e8fbff; letter-spacing: 0.08em; font-size: 12px; opacity: 0; transition: opacity 0.3s; }
 .toast.on { opacity: 1; }
+
+.tutorial { position: absolute; right: 18px; bottom: 70px; width: 300px; background: var(--panel-2); border: 1px solid var(--amber); padding: 10px 14px; color: #e8fbff; font-size: 12px; line-height: 1.5; pointer-events: auto; display: none; z-index: 20; }
+.tutorial.on { display: block; }
+.tutorial .tt { display: flex; justify-content: space-between; align-items: center; color: var(--amber); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
+.tutorial .tt button { padding: 0 8px; font-size: 16px; line-height: 1.2; }
+.tutorial .tf { text-align: right; margin-top: 6px; }
+.tutorial .tf button { padding: 2px 8px; font-size: 10px; }
