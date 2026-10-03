@@ -3,6 +3,7 @@ import { PROPELLANTS, LIQUIDS, UPGRADE_INFO, vehicleStats, buildVehicle } from '
 import { MISSIONS } from '../data/missions.js';
 import { fmtTime } from '../sim/math.js';
 import * as U from './units.js';
+import { downloadTelemetryCsv, downloadMissionCard } from './export.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const clsTag = (c) => `<span class="tag ${c === 'Super Heavy' ? 'super' : c.toLowerCase()}">${c}</span>`;
@@ -442,7 +443,10 @@ export class UI {
         <h3>Flight statistics</h3>
         <div class="kv"><span>Max altitude</span><span>${U.alt(st.maxAlt)}</span><span>Max speed</span><span>${U.speed(st.maxSpeed)}</span><span>Max-Q</span><span>${U.press(st.maxQ)} at ${fmtTime(st.maxQt)}</span><span>Max acceleration</span><span>${st.maxG.toFixed(2)} g</span><span>Δv expended</span><span>${(st.dvUsed / 1000).toFixed(2)} km/s</span><span>Final orbit</span><span>${el.apoapsis === Infinity ? '∞' : U.alt(el.apoapsis)} × ${U.alt(el.periapsis)}, ${el.inc.toFixed(1)}°</span><span>Downrange</span><span>${U.dist(sim.tel.downrange)}</span></div>
         <div class="row" style="margin-top:14px"><button class="primary" data-a="continue" ${sim.status === 'orbit' ? '' : 'disabled'}>Continue in orbit</button><button data-a="again">Fly again</button><button data-a="menu">Main menu</button></div>
+        <div class="row" style="margin-top:8px"><button data-a="csv">Download telemetry CSV</button><button data-a="card">Download mission card PNG</button></div>
       </div>`);
+    this.on(s, '[data-a=csv]', 'click', () => downloadTelemetryCsv(sim, vehicle));
+    this.on(s, '[data-a=card]', 'click', () => downloadMissionCard(result, sim, vehicle, mission));
     this.on(s, '[data-a=continue]', 'click', h.cont);
     this.on(s, '[data-a=again]', 'click', h.again);
     this.on(s, '[data-a=menu]', 'click', h.menu);
