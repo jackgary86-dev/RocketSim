@@ -451,6 +451,34 @@ export class UI {
     this.show('results');
   }
 
+  // ---------------- scrub ----------------
+  scrub(reason, h) {
+    const s = this.screen('scrub', `
+      <div class="topbar"><span class="ph">Scrub</span><span class="clock" id="sc-clock">00:00</span><span class="ph" id="sc-phase" style="color:var(--red)">SAFING</span></div>
+      <div class="actions"><div class="panel"><h2>Scrub — ${esc(reason)}</h2>
+        <div class="muted" id="sc-status">Safing the vehicle…</div>
+        <div class="bar"><i id="sc-bar" style="width:0%"></i></div>
+        <div class="muted" id="sc-mass"></div>
+        <div class="row"><button class="go" data-a="recycle" id="sc-recycle" disabled>Recycle the count</button><button data-a="menu">Main menu</button></div></div></div>
+      <div class="console" id="sc-log"></div>`);
+    this.on(s, '[data-a=recycle]', 'click', h.recycle);
+    this.on(s, '[data-a=menu]', 'click', h.menu);
+    this._scLog = 0;
+    this.show('scrub');
+  }
+  updateScrub(info) {
+    const s = this.screens.scrub;
+    if (!s) return;
+    s.querySelector('#sc-clock').textContent = fmtTime(info.t, false);
+    s.querySelector('#sc-phase').textContent = info.done ? 'SAFE' : info.safing ? 'PAD SAFING' : 'DETANKING';
+    s.querySelector('#sc-phase').style.color = info.done ? 'var(--green)' : 'var(--red)';
+    s.querySelector('#sc-status').textContent = info.done ? 'Vehicle safe. Propellant drained.' : info.safing ? 'Engine shutdown in progress…' : 'Draining propellant tanks…';
+    s.querySelector('#sc-bar').style.width = `${(info.safing ? 0 : info.progress) * 100}%`;
+    s.querySelector('#sc-mass').textContent = `${U.massT(info.loaded)} of ${U.massT(info.total)} still in the tanks`;
+    s.querySelector('#sc-recycle').disabled = !info.done;
+    this.appendLog(s.querySelector('#sc-log'), info.log, '_scLog');
+  }
+
   pause(h) {
     const s = this.screen('pause', `<div class="dim"></div><div class="modal panel"><h2>Paused</h2><button class="primary" data-a="resume">Resume</button><button data-a="restart">Restart this launch</button><button data-a="results">Show results so far</button><button class="danger" data-a="menu">Abort to menu</button></div>`);
     this.on(s, 'button', 'click', (e) => h[e.currentTarget.dataset.a]());

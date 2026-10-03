@@ -119,17 +119,46 @@ class App {
     });
   }
 
+  scrubNote(who, text, kind = 'info') { this.scrubLog.push({ t: this.scrubT, who, text, kind }); }
+
+  /**
+   * Scrub: if the engines are already lit the plume is shut off over 1 s ("pad safing") and
+   * the vehicle stays on the pad; then the tanks drain and the player can recycle the count
+   * (a brand-new FuelingSequence) or return to the menu.
+   */
   scrub(reason) {
-    this.audio.say(`Scrub. ${reason}. Detanking.`, true);
-    this.state = 'detank';
-    this.detankT = 0;
-    this.detankFrom = this.fueling ? this.fueling.tanks.map((k) => k.level) : [];
-    this.ui.toast(`SCRUB — ${reason}. Detanking…`, 6000);
+    const afterIgnition = !!(this.ignited && this.sim);
     if (this.prelaunch) this.prelaunch.scrub(reason);
+    this.state = 'detank';
+    this.scrubT = 0;
+    this.detankT = 0;
+    this.scrubDone = false;
+    this.scrubReason = reason;
+    this.safingLeft = afterIgnition ? 1 : 0;
+    this.detankFrom = this.fueling ? this.fueling.tanks.map((k) => k.level) : [];
+    this.scrubLog = [];
+    this.scrubNote('LAUNCH DIRECTOR', `SCRUB — ${reason}`, 'bad');
+    this.scrubNote('PROPULSION', afterIgnition ? 'Engine shutdown — pad safing' : 'Count stopped. Safing the vehicle', 'warn');
+    this.audio.say(afterIgnition ? `Scrub. ${reason}. Engine shutdown, pad safing.` : `Scrub. ${reason}.`, true);
+    if (!afterIgnition) { this.ignited = false; this.sim = null; this.audio.setEngine(0, 0); this.beginDetank(); }
+    this.ui.scrub(reason, {
+      recycle: () => this.recycleAfterScrub(),
+      menu: () => this.showMenu(),
+    });
+  }
+
+  beginDetank() {
+    const solid = this.fueling?.tanks.some((k) => k.kind === 'solid');
+    this.scrubNote('GROUND SYSTEMS', 'Detank in progress — draining propellant to the storage spheres');
+    if (solid) this.scrubNote('RANGE SAFETY', 'Solid motors remain installed — safe & arm devices SAFE');
+  }
+
+  recycleAfterScrub() {
+    this.prelaunch = null;
     this.ignited = false;
     this.sim = null;
-    this.audio.setEngine(0, 0);
-    if (this.fueling) { this.ui.fueling(this.fueling, {}); this.ui.updateFueling(this.fueling); }
+    this.lastCount = undefined;
+    this.startFueling();   // brand-new FuelingSequence: empty tanks, fresh timeline
   }
 
   startPrecheck() {
@@ -276,12 +305,34 @@ class App {
       ctx.mode = 'fuel'; ctx.vent = f.ventLevel; ctx.cameraMode = 'padwide';
       if (f.done) this.startPrecheck();
     } else if (this.state === 'detank') {
-      this.detankT += dt;
-      const p = Math.min(1, this.detankT / 14);
-      if (this.fueling) this.fueling.tanks.forEach((k, i) => { if (!k.fixed) { k.level = this.detankFrom[i] * (1 - p); k.status = p < 1 ? 'DETANKING' : 'EMPTY'; k.started = null; } });
-      if (this.fueling && this.ui.active === 'fueling') this.ui.updateFueling(this.fueling);
-      ctx.mode = 'fuel'; ctx.vent = (1 - p) * 0.6; ctx.cameraMode = 'padwide';
-      if (p >= 1) { this.ui.toast('Vehicle safed. Ready to recycle the count.', 3000); this.showPad(); }
+      this.scrubT += dt;
+      let p = 0;
+      ctx.mode = 'fuel'; ctx.cameraMode = 'padwide';
+      if (this.safingLeft > 0) {
+        // engines were lit: shut the plume off over 1 s with the vehicle held on the pad
+        const sim = this.sim;
+        this.safingLeft = Math.max(0, this.safingLeft - dt);
+        sim.throttle = this.safingLeft;
+        ctx.mode = 'flight'; ctx.sim = sim; ctx.cameraMode = 'pad'; ctx.vent = 0.25;
+        this.audio.setEngine(this.safingLeft, 1);
+        if (this.safingLeft === 0) {
+          this.ignited = false; this.sim = null; this.audio.setEngine(0, 0);
+          this.scrubNote('GROUND SYSTEMS', 'Engines safed. Water deluge off, hold-down posts confirmed');
+          this.beginDetank();
+        }
+      } else {
+        this.detankT += dt;
+        p = Math.min(1, this.detankT / 14);
+        if (this.fueling) this.fueling.tanks.forEach((k, i) => { if (!k.fixed) { k.level = this.detankFrom[i] * (1 - p); k.status = p < 1 ? 'DETANKING' : 'EMPTY'; k.started = null; } });
+        ctx.vent = (1 - p) * 0.6;
+        if (p >= 1 && !this.scrubDone) {
+          this.scrubDone = true;
+          this.scrubNote('LAUNCH DIRECTOR', 'Vehicle is safe. Detank complete — ready to recycle', 'good');
+          this.audio.say('Vehicle is safe. Detank complete.');
+        }
+      }
+      this.ui.updateScrub({ safing: this.safingLeft > 0, progress: p, done: this.scrubDone, log: this.scrubLog, t: this.scrubT,
+        loaded: this.fueling ? this.fueling.loadedMass : 0, total: this.fueling ? this.fueling.totalMass : 0 });
     } else if (this.state === 'precheck') {
       const p = this.prelaunch;
       p.update(dt);
