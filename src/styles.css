@@ -38,7 +38,8 @@ h3 { font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: v
 .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .spread { justify-content: space-between; }
 .tag { display: inline-block; border: 1px solid var(--line); padding: 1px 7px; font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
-.tag.small { color: #9fd6ff; } .tag.medium { color: #ffd37a; } .tag.heavy { color: #ff9d6b; } .tag.super { color: #ff6b8a; }
+.tag.small { color: #9fd6ff; } .tag.medium { color: #ffd37a; } .tag.heavy { color: #ff9d6b; } .tag.super { color: #ff6b8a; } .tag.custom { color: #9dffb0; }
+select, input[type=text] { width: 100%; background: #0b1822; color: var(--text); border: 1px solid var(--line); padding: 6px 8px; font: inherit; }
 
 /* menu */
 .menu-wrap { position: absolute; left: 60px; top: 50%; transform: translateY(-50%); width: 420px; }

@@ -1,4 +1,5 @@
 import { ROCKETS } from './data/rockets.js';
+import { allRockets, customStore, certifyPayload, rocketFromSpec } from './data/builder.js';
 import { DEFAULT_CONFIG, buildVehicle, vehicleStats } from './data/config.js';
 import { MISSIONS, evaluate, progress, settings } from './data/missions.js';
 import { FlightSim, LAUNCH_SITE } from './sim/flight.js';
@@ -16,7 +17,7 @@ const WARPS = [1, 2, 4, 10, 25, 50];
 
 class App {
   constructor() {
-    settings.load(); progress.load();
+    settings.load(); progress.load(); customStore.load();
     units.system = settings.data.units;
     this.ui = new UI(document.getElementById('ui'));
     this.view = new View(document.getElementById('gl'));
@@ -51,6 +52,7 @@ class App {
     this.view.setVehicle(buildVehicle(menuRocket, DEFAULT_CONFIG));
     this.ui.menu(progress.data, {
       free: () => { this.mission = null; this.showRockets(); },
+      builder: () => this.showBuilder(),
       missions: () => this.ui.missions(progress.data, (m) => { this.mission = m; this.showRockets(); }, () => this.showMenu()),
       settings: () => this.ui.settings(settings.data, (d) => { settings.save(); units.system = d.units; }, () => this.showMenu()),
       controls: () => this.ui.controls(() => this.showMenu()),
@@ -60,12 +62,40 @@ class App {
   showRockets() {
     this.state = 'rockets';
     const h = {
-      select: (id) => { this.rocket = ROCKETS.find((r) => r.id === id); this.view.setVehicle(buildVehicle(this.rocket, this.cfg)); this.ui.rockets(id, this.mission, h); },
+      select: (id) => { this.rocket = allRockets().find((r) => r.id === id); this.view.setVehicle(buildVehicle(this.rocket, this.cfg)); this.ui.rockets(id, this.mission, h); },
       next: () => this.showFuel(),
+      builder: () => this.showBuilder(),
+      remove: (id) => {
+        customStore.remove(id);
+        if (this.rocket?.id === id) this.rocket = ROCKETS[0];
+        this.view.setVehicle(buildVehicle(this.rocket, this.cfg));
+        this.ui.rockets(this.rocket.id, this.mission, h);
+      },
       back: () => this.showMenu(),
     };
     this.ui.rockets(this.rocket?.id, this.mission, h);
     if (this.rocket) this.view.setVehicle(buildVehicle(this.rocket, this.cfg));
+  }
+
+  showBuilder() {
+    this.state = 'builder';
+    this.builderSpec = this.builderSpec || { name: 'My Rocket', lower: 'falcon9', upper: 'falcon9', boosters: null, nose: 'fairing', livery: 'white' };
+    this.ui.builder(this.builderSpec, {
+      preview: (r) => this.view.setVehicle(buildVehicle(r, DEFAULT_CONFIG)),
+      save: (spec) => {
+        this.ui.toast('Certifying design — running a test ascent…', 4000);
+        // let the toast paint before the synchronous headless ascent
+        setTimeout(() => {
+          const payload = certifyPayload(spec);
+          if (!payload) { this.ui.toast('This design does not reach orbit in the test ascent. Adjust the stack.', 5000); return; }
+          const id = customStore.add({ ...spec, name: spec.name.trim(), payload });
+          this.builderSpec = null;
+          this.rocket = rocketFromSpec(customStore.specs.find((x) => x.id === id));
+          this.showRockets();
+        }, 30);
+      },
+      back: () => this.showRockets(),
+    });
   }
 
   showFuel() {

@@ -1,4 +1,5 @@
-import { ROCKETS, CLASSES } from '../data/rockets.js';
+import { CLASSES } from '../data/rockets.js';
+import { allRockets, parts, previewStats, LIVERIES, NOSES } from '../data/builder.js';
 import { PROPELLANTS, LIQUIDS, UPGRADE_INFO, vehicleStats, buildVehicle } from '../data/config.js';
 import { MISSIONS } from '../data/missions.js';
 import { fmtTime } from '../sim/math.js';
@@ -48,6 +49,7 @@ export class UI {
         <h1>ROCKETSIM</h1>
         <div class="sub">LAUNCH OPERATIONS SIMULATOR · LC-39A</div>
         <button class="primary" data-a="free">▶ Free Play — pick any of 20 vehicles</button>
+        <button data-a="builder">🛠 Rocket Builder — design a custom vehicle</button>
         <button data-a="missions">◎ Missions — ${done}/${MISSIONS.length} complete</button>
         <button data-a="settings">⚙ Settings &amp; Difficulty</button>
         <button data-a="controls">⌨ Controls</button>
@@ -116,17 +118,19 @@ export class UI {
     const s = this.screen('rockets', `
       <div class="full">
         <div class="head"><div><h2>Select launch vehicle${mission ? ` — ${esc(mission.name)}` : ''}</h2>${steps('Rocket')}</div><button data-a="back">Back</button></div>
-        <div class="body"><div class="cards">${ROCKETS.map((r) => `<div class="card ${r.id === selectedId ? 'selected' : ''} ${mission?.rocketClass && mission.rocketClass !== r.class ? 'locked' : ''}" data-id="${r.id}">
+        <div class="body"><div class="cards">${allRockets().map((r) => `<div class="card ${r.id === selectedId ? 'selected' : ''} ${mission?.rocketClass && mission.rocketClass !== r.class ? 'locked' : ''}" data-id="${r.id}">
           <div class="name">${esc(r.name)}</div><div class="meta">${esc(r.maker)} · ${esc(r.country)} · ${r.era}</div>
           <div class="stats"><span>${clsTag(r.class)}</span><span>${r.stages.length} stage${r.stages.length > 1 ? 's' : ''}${r.boosters ? ` + ${r.boosters.count} boosters` : ''}</span><span>Height <b>${r.height} m</b></span><span>LEO <b>${r.payload} t</b></span></div></div>`).join('')}</div></div>
-        <div class="foot"><span class="muted">Click a vehicle to inspect it on the pad.</span><button class="primary" data-a="next" ${selectedId ? '' : 'disabled'}>Select propellant ›</button></div>
+        <div class="foot"><span class="muted">Click a vehicle to inspect it on the pad.</span><span><button data-a="builder">🛠 Builder</button> <button class="primary" data-a="next" ${selectedId ? '' : 'disabled'}>Select propellant ›</button></span></div>
       </div>
       <div class="detail panel" id="rocket-detail"></div>`);
     this.on(s, '.card', 'click', (e) => h.select(e.currentTarget.dataset.id));
     this.on(s, '[data-a=next]', 'click', h.next);
+    this.on(s, '[data-a=builder]', 'click', h.builder);
     this.on(s, '[data-a=back]', 'click', h.back);
+    this.rocketHandlers = h;
     this.show('rockets');
-    if (selectedId) this.rocketDetail(ROCKETS.find((r) => r.id === selectedId));
+    if (selectedId) this.rocketDetail(allRockets().find((r) => r.id === selectedId));
   }
   rocketDetail(r) {
     const el = this.screens.rockets.querySelector('#rocket-detail');
@@ -134,7 +138,75 @@ export class UI {
     el.style.display = 'block';
     const st = vehicleStats(buildVehicle(r));
     el.innerHTML = `<div class="big">${esc(r.name)}</div><div class="muted" style="margin:4px 0 10px">${esc(r.desc)}</div>
-      <div class="kv"><span>Class</span><span>${r.class}</span><span>Height / diameter</span><span>${r.height} m / ${r.diameter} m</span><span>Liftoff mass</span><span>${U.massT(st.glow)}</span><span>Liftoff thrust</span><span>${U.force(st.liftThrust * 1000)}</span><span>Thrust-to-weight</span><span>${st.twr.toFixed(2)}</span><span>Ideal Δv</span><span>${(st.dv / 1000).toFixed(2)} km/s</span><span>Stages</span><span>${r.stages.map((s) => `${esc(s.name)} (${PROPELLANTS[s.fuel].name})`).join('<br>')}</span></div>`;
+      <div class="kv"><span>Class</span><span>${r.class}</span><span>Height / diameter</span><span>${r.height} m / ${r.diameter} m</span><span>Liftoff mass</span><span>${U.massT(st.glow)}</span><span>Liftoff thrust</span><span>${U.force(st.liftThrust * 1000)}</span><span>Thrust-to-weight</span><span>${st.twr.toFixed(2)}</span><span>Ideal Δv</span><span>${(st.dv / 1000).toFixed(2)} km/s</span><span>Stages</span><span>${r.stages.map((s) => `${esc(s.name)} (${PROPELLANTS[s.fuel].name})`).join('<br>')}</span></div>${r.custom ? '<div style="margin-top:10px"><button data-a="delete">Delete this design</button></div>' : ''}`;
+    const del = el.querySelector('[data-a=delete]');
+    if (del) del.addEventListener('click', () => this.rocketHandlers.remove(r.id));
+  }
+
+  // ---------------- builder ----------------
+  builder(spec, h) {
+    const P = parts();
+    const opts = (list, sel, none) => `${none ? `<option value="">${none}</option>` : ''}${list.map((p) => `<option value="${p.id}" ${p.id === sel ? 'selected' : ''}>${esc(p.label)}</option>`).join('')}`;
+    const s = this.screen('builder', `
+      <div class="full">
+        <div class="head"><div><h2>Rocket builder</h2><div class="muted">Combine catalogue parts into a custom vehicle. It is saved in this browser.</div></div><button data-a="back">Back</button></div>
+        <div class="body"><div class="config-grid">
+          <div class="panel">
+            <div class="opt"><label>Name</label><input type="text" data-k="name" maxlength="24" value="${esc(spec.name)}"><span></span></div>
+            <div class="opt"><label>First stage</label><select data-k="lower">${opts(P.lower, spec.lower)}</select><span></span></div>
+            <div class="opt"><label>Upper stage</label><select data-k="upper">${opts(P.upper, spec.upper)}</select><span></span></div>
+            <div class="opt"><label>Boosters</label><select data-k="booster">${opts(P.boosters, spec.boosters?.id, 'None')}</select><span></span></div>
+            <div class="opt"><label>Booster count</label><input type="range" data-k="count" min="1" max="6" step="1" value="${spec.boosters?.count || 2}"><span class="val" data-val="count">${spec.boosters?.count || 2}</span></div>
+            <div class="opt"><label>Nose</label><div class="toggle" data-k="nose">${NOSES.map(([v, l]) => `<button class="${spec.nose === v ? 'on' : ''}" data-v="${v}">${l}</button>`).join('')}</div><span></span></div>
+            <div class="opt"><label>Livery</label><div class="toggle" data-k="livery">${LIVERIES.map((l) => `<button class="${spec.livery === l.id ? 'on' : ''}" data-v="${l.id}">${l.name}</button>`).join('')}</div><span></span></div>
+            <div class="hint muted" style="margin-top:8px">The upper stage is fitted to the first stage's diameter. Payload is sized automatically so the stack reaches a 250 km orbit.</div>
+          </div>
+          <div class="panel" id="bld-stats"></div>
+        </div></div>
+        <div class="foot"><span class="muted" id="bld-warn"></span><button class="primary" data-a="save">Save &amp; use ›</button></div>
+      </div>`);
+    const refresh = () => {
+      const info = previewStats(spec);
+      const el = s.querySelector('#bld-stats'), warn = s.querySelector('#bld-warn'), save = s.querySelector('[data-a=save]');
+      if (!info) { el.innerHTML = '<h3>Invalid stack</h3>'; save.disabled = true; return; }
+      const st = info.stats;
+      const ok = info.payload > 0;
+      el.innerHTML = `<h3>Performance estimate</h3>
+        <div class="stat"><span>Height / diameter</span><b>${info.rocket.height} m / ${info.rocket.diameter} m</b></div>
+        <div class="stat"><span>Liftoff mass</span><b>${U.massT(st.glow)}</b></div>
+        <div class="stat"><span>Liftoff thrust</span><b>${U.force(st.liftThrust * 1000)}</b></div>
+        <div class="stat"><span>Thrust-to-weight</span><b class="${st.twr < 1.05 ? 'red' : st.twr < 1.2 ? 'amber' : 'green'}">${st.twr.toFixed(2)}</b></div>
+        <div class="stat"><span>Ideal Δv</span><b>${(st.dv / 1000).toFixed(2)} km/s</b></div>
+        <div class="stat"><span>Payload to LEO</span><b class="${ok ? 'green' : 'red'}">${ok ? U.massT(info.payload) : 'none'}</b></div>
+        <h3>Stages</h3>${info.vehicle.stages.map((x, i) => `<div class="stat"><span>${esc(x.name)} (${PROPELLANTS[x.fuel].name})</span><b>${(st.stageDv[i] / 1000).toFixed(2)} km/s</b></div>`).join('')}`;
+      warn.textContent = ok ? '' : st.twr < 1.15 ? '⚠ Thrust-to-weight is too low — this stack cannot leave the pad. Add boosters or a lighter upper stage.' : '⚠ Not enough Δv for orbit with any payload. Pick a larger first stage or add boosters.';
+      save.disabled = !ok;
+      h.preview(info.rocket);
+    };
+    this.on(s, 'input[type=text]', 'input', (e) => { spec.name = e.target.value; });
+    this.on(s, 'select', 'change', (e) => {
+      const k = e.target.dataset.k, v = e.target.value;
+      if (k === 'booster') spec.boosters = v ? { id: v, count: +s.querySelector('[data-k=count]').value } : null;
+      else spec[k] = v;
+      refresh();
+    });
+    this.on(s, 'input[type=range]', 'input', (e) => {
+      s.querySelector('[data-val=count]').textContent = e.target.value;
+      if (spec.boosters) { spec.boosters.count = +e.target.value; refresh(); }
+    });
+    this.on(s, '.toggle button', 'click', (e) => {
+      const g = e.currentTarget.parentElement;
+      spec[g.dataset.k] = e.currentTarget.dataset.v;
+      g.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b === e.currentTarget));
+      refresh();
+    });
+    this.on(s, '[data-a=save]', 'click', () => {
+      if (!spec.name.trim()) { this.toast('Give the vehicle a name first.'); return; }
+      h.save(spec);
+    });
+    this.on(s, '[data-a=back]', 'click', h.back);
+    this.show('builder');
+    refresh();
   }
 
   // ---------------- fuel ----------------
