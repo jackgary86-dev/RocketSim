@@ -60,9 +60,6 @@ if (fails) { console.error(fails + ' vehicles failed to reach orbit'); process.e
   `src/data/missions.js`, $20M–$400M by difficulty). Failed launches pay nothing. Reusable
   boosters that land refund 60% of their stage cost. Balance persists in localStorage;
   show it on the menu and results screens.
-- [ ] **T6 — Replay export.** Record the flight track (`sim.track` plus events) and add a
-  "Download telemetry CSV" and "Download mission card PNG" (canvas-rendered summary:
-  vehicle, orbit, score, map thumbnail) to the results screen.
 - [ ] **T7 — Rocket builder (MVP).** New "Builder" screen: pick a first stage, upper stage,
   optional boosters and nose from the existing catalogue parts, name it, and save it to
   localStorage. Built vehicles appear in the rocket list under a "Custom" class.
@@ -76,3 +73,5 @@ if (fails) { console.error(fails + ' vehicles failed to reach orbit'); process.e
 ## Done
 
 (The routine moves finished tickets here with the commit hash.)
+
+- [x] **T6 — Replay export.** Results screen now has "Download telemetry CSV" (track + event log) and "Download mission card PNG" (`src/ui/export.js`).
