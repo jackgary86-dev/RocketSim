@@ -73,7 +73,7 @@ export const progress = {
 
 const SKEY = 'rocketsim.settings.v1';
 export const settings = {
-  data: { difficulty: 'easy', failures: true, sound: true, voice: true, units: 'imperial' },
+  data: { difficulty: 'easy', failures: true, sound: true, voice: true, units: 'imperial', names: 'fictional' },
   load() { try { const raw = localStorage.getItem(SKEY); if (raw) this.data = { ...this.data, ...JSON.parse(raw) }; } catch { /* ignore */ } return this.data; },
   save() { try { localStorage.setItem(SKEY, JSON.stringify(this.data)); } catch { /* ignore */ } },
 };

@@ -3,6 +3,7 @@ import { PROPELLANTS, LIQUIDS, UPGRADE_INFO, vehicleStats, buildVehicle } from '
 import { MISSIONS } from '../data/missions.js';
 import { fmtTime } from '../sim/math.js';
 import * as U from './units.js';
+import { displayName, displayMaker } from '../data/names.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const clsTag = (c) => `<span class="tag ${c === 'Super Heavy' ? 'super' : c.toLowerCase()}">${c}</span>`;
@@ -84,6 +85,7 @@ export class UI {
         <div class="opt"><label>Sound</label>${tog('sound', [[true, 'On'], [false, 'Off']])}</div>
         <div class="opt"><label>Voice callouts</label>${tog('voice', [[true, 'On'], [false, 'Off']])}</div>
         <div class="opt"><label>Units</label>${tog('units', [['imperial', 'Imperial'], ['metric', 'Metric']])}</div>
+        <div class="opt"><label>Vehicle names</label>${tog('names', [['fictional', 'Fictional'], ['real', 'Real-world']])}<div class="hint">Fictional names are original; real-world names are for reference only.</div></div>
         <button data-a="back" style="margin-top:12px">Back</button>
       </div>`);
     this.on(s, '.toggle button', 'click', (e) => {
@@ -117,7 +119,7 @@ export class UI {
       <div class="full">
         <div class="head"><div><h2>Select launch vehicle${mission ? ` — ${esc(mission.name)}` : ''}</h2>${steps('Rocket')}</div><button data-a="back">Back</button></div>
         <div class="body"><div class="cards">${ROCKETS.map((r) => `<div class="card ${r.id === selectedId ? 'selected' : ''} ${mission?.rocketClass && mission.rocketClass !== r.class ? 'locked' : ''}" data-id="${r.id}">
-          <div class="name">${esc(r.name)}</div><div class="meta">${esc(r.maker)} · ${esc(r.country)} · ${r.era}</div>
+          <div class="name">${esc(displayName(r))}</div><div class="meta">${esc(displayMaker(r))} · ${esc(r.country)} · ${r.era}</div>
           <div class="stats"><span>${clsTag(r.class)}</span><span>${r.stages.length} stage${r.stages.length > 1 ? 's' : ''}${r.boosters ? ` + ${r.boosters.count} boosters` : ''}</span><span>Height <b>${r.height} m</b></span><span>LEO <b>${r.payload} t</b></span></div></div>`).join('')}</div></div>
         <div class="foot"><span class="muted">Click a vehicle to inspect it on the pad.</span><button class="primary" data-a="next" ${selectedId ? '' : 'disabled'}>Select propellant ›</button></div>
       </div>
@@ -133,7 +135,7 @@ export class UI {
     if (!r) { el.style.display = 'none'; return; }
     el.style.display = 'block';
     const st = vehicleStats(buildVehicle(r));
-    el.innerHTML = `<div class="big">${esc(r.name)}</div><div class="muted" style="margin:4px 0 10px">${esc(r.desc)}</div>
+    el.innerHTML = `<div class="big">${esc(displayName(r))}</div><div class="muted" style="margin:4px 0 10px">${esc(r.desc)}</div>
       <div class="kv"><span>Class</span><span>${r.class}</span><span>Height / diameter</span><span>${r.height} m / ${r.diameter} m</span><span>Liftoff mass</span><span>${U.massT(st.glow)}</span><span>Liftoff thrust</span><span>${U.force(st.liftThrust * 1000)}</span><span>Thrust-to-weight</span><span>${st.twr.toFixed(2)}</span><span>Ideal Δv</span><span>${(st.dv / 1000).toFixed(2)} km/s</span><span>Stages</span><span>${r.stages.map((s) => `${esc(s.name)} (${PROPELLANTS[s.fuel].name})`).join('<br>')}</span></div>`;
   }
 
@@ -156,7 +158,7 @@ export class UI {
     }).join('');
     const s = this.screen('fuel', `
       <div class="full">
-        <div class="head"><div><h2>Propellant selection — ${esc(rocket.name)}</h2>${steps('Fuel')}</div><button data-a="back">Back</button></div>
+        <div class="head"><div><h2>Propellant selection — ${esc(displayName(rocket))}</h2>${steps('Fuel')}</div><button data-a="back">Back</button></div>
         <div class="body"><div class="fuel-grid">${cards}</div>
           <p class="muted" style="max-width:900px">Swapping propellant rescales each liquid stage's specific impulse and tank mass for the new bulk density. Solid motors cannot be changed. Cryogenic propellants add chilldown time and boil-off during loading.</p></div>
         <div class="foot"><span class="muted">Choose a propellant family.</span><button class="primary" data-a="next">Configure vehicle ›</button></div>
@@ -173,7 +175,7 @@ export class UI {
     const tog = (key, label, opts) => `<div class="opt"><label>${label}</label><div class="toggle" data-key="${key}">${opts.map(([v, l]) => `<button class="${String(cfg[key]) === String(v) ? 'on' : ''}" data-v="${v}">${l}</button>`).join('')}</div><span></span><div class="hint">${UPGRADE_INFO[key]}</div></div>`;
     const s = this.screen('config', `
       <div class="full">
-        <div class="head"><div><h2>Vehicle configuration — ${esc(rocket.name)}</h2>${steps('Build')}</div><button data-a="back">Back</button></div>
+        <div class="head"><div><h2>Vehicle configuration — ${esc(displayName(rocket))}</h2>${steps('Build')}</div><button data-a="back">Back</button></div>
         <div class="body"><div class="config-grid">
           <div class="panel">
             <h3>Range &amp; performance</h3>
@@ -221,7 +223,7 @@ export class UI {
   delivery(seq, vehicle, h) {
     const s = this.screen('delivery', `
       <div class="delivery">
-        <div class="panel"><h2>Shipping to LC-39A — ${esc(vehicle.name)}</h2>${steps('Shipping')}<div class="bar" style="margin-top:10px"><i id="dl-bar" style="width:0%"></i></div>
+        <div class="panel"><h2>Shipping to LC-39A — ${esc(displayName(vehicle))}</h2>${steps('Shipping')}<div class="bar" style="margin-top:10px"><i id="dl-bar" style="width:0%"></i></div>
           <div class="row spread" style="margin-top:6px;font-size:11px"><span class="muted" id="dl-count"></span><span class="muted" id="dl-mass"></span></div></div>
         <div class="current" id="dl-current"><div class="muted">Loading manifest…</div></div>
         <div class="manifest" id="dl-list">${seq.items.map((it, i) => `<div data-i="${i}" class="${it.hazmat ? 'hazmat' : ''}"><span>${it.icon} ${esc(it.title)}</span><span>${U.massT(it.mass)}</span></div>`).join('')}</div>
@@ -261,7 +263,7 @@ export class UI {
 
   pad(vehicle, h) {
     const s = this.screen('pad', `
-      <div class="actions"><div class="panel"><h2>Vehicle on pad — ${esc(vehicle.name)}</h2>${steps('Fueling')}
+      <div class="actions"><div class="panel"><h2>Vehicle on pad — ${esc(displayName(vehicle))}</h2>${steps('Fueling')}
         <div class="muted" style="margin:8px 0">Umbilicals connected. Launch mount hold-downs engaged. The vehicle is dry and ready for propellant loading.</div>
         <button class="primary" data-a="fuel">Begin propellant loading ›</button><button data-a="menu">Abort to menu</button></div></div>`);
     this.on(s, '[data-a=fuel]', 'click', h.fuel);
@@ -437,7 +439,7 @@ export class UI {
     const st = sim.stats, el = sim.tel.el;
     const s = this.screen('results', `
       <div class="dim"></div>
-      <div class="results panel"><div class="row spread"><div><h2>${mission ? esc(mission.name) : 'Free flight'} — ${result.success ? '<span class="green">SUCCESS</span>' : '<span class="red">OBJECTIVES NOT MET</span>'}</h2><div class="muted">${esc(vehicle.name)} · ${sim.status.toUpperCase()}</div></div><div class="score">${result.score}<div class="muted" style="font-size:11px">SCORE</div></div></div>
+      <div class="results panel"><div class="row spread"><div><h2>${mission ? esc(mission.name) : 'Free flight'} — ${result.success ? '<span class="green">SUCCESS</span>' : '<span class="red">OBJECTIVES NOT MET</span>'}</h2><div class="muted">${esc(displayName(vehicle))} · ${sim.status.toUpperCase()}</div></div><div class="score">${result.score}<div class="muted" style="font-size:11px">SCORE</div></div></div>
         <div class="lines">${result.lines.map((l) => `<div class="${l.ok ? 'ok' : 'fail'}"><span>${esc(l.label)}</span><span>${esc(l.text)}</span></div>`).join('')}</div>
         <h3>Flight statistics</h3>
         <div class="kv"><span>Max altitude</span><span>${U.alt(st.maxAlt)}</span><span>Max speed</span><span>${U.speed(st.maxSpeed)}</span><span>Max-Q</span><span>${U.press(st.maxQ)} at ${fmtTime(st.maxQt)}</span><span>Max acceleration</span><span>${st.maxG.toFixed(2)} g</span><span>Δv expended</span><span>${(st.dvUsed / 1000).toFixed(2)} km/s</span><span>Final orbit</span><span>${el.apoapsis === Infinity ? '∞' : U.alt(el.apoapsis)} × ${U.alt(el.periapsis)}, ${el.inc.toFixed(1)}°</span><span>Downrange</span><span>${U.dist(sim.tel.downrange)}</span></div>

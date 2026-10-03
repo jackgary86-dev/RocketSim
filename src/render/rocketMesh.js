@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { PROPELLANTS } from '../data/config.js';
+import { displayMaker } from '../data/names.js';
 
 // ---------- materials & textures ----------
 function bodyTexture(color, accent, { stripes = false, text = '', band = true } = {}) {
@@ -130,7 +131,7 @@ export class RocketModel {
       g.position.y = this.stageBase[i];
       const len = this.stageLen[i];
       const isSaturnS1 = v.id === 'saturnv' && i === 0;
-      const tex = bodyTexture(s.color || body, accent, { stripes: isSaturnS1, text: i === 0 && v.nose !== 'shuttle' ? (v.maker.split(' ')[0].toUpperCase()) : '' });
+      const tex = bodyTexture(s.color || body, accent, { stripes: isSaturnS1, text: i === 0 && v.nose !== 'shuttle' ? (displayMaker(v).split(' ')[0].toUpperCase()) : '' });
       const mat = new THREE.MeshStandardMaterial({ map: tex, metalness: v.id === 'starship' ? 0.85 : 0.15, roughness: v.id === 'starship' ? 0.35 : 0.6 });
       const bodyG = new THREE.Group();
       const cyl = new THREE.Mesh(new THREE.CylinderGeometry(d / 2, d / 2, len, 40, 1), mat);
