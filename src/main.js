@@ -161,6 +161,8 @@ class App {
     this.view.cameraMode = 'chase';
     this.view.controls.enabled = false;
     this.ui.flight({
+      hold: (k, down) => { this.keys[k] = down; },
+      tap: (k) => this.flightKey(k),
       stage: () => this.sim.separate(), auto: () => this.sim.setAutopilot(!this.sim.autopilot), camera: () => this.cycleCamera(),
       map: () => this.mapToggle(!this.mapOpen), warp: (d) => this.warp(d), pause: () => this.pauseToggle(),
     });
@@ -212,8 +214,17 @@ class App {
     this.keys[k] = down;
     if (!down) return;
     if (this.state === 'flight' && !this.paused) {
-      const s = this.sim;
-      if (k === ' ') { e.preventDefault(); s.separate(); }
+      this.flightKey(k, e);
+    } else if (this.state === 'flight' && this.paused && k === 'escape') this.pauseToggle();
+    else if (this.state === 'results' && k === 'escape') { this.state = 'flight'; this.ui.show('flight'); }
+  }
+
+  // one-shot flight commands shared by the keyboard and the touch buttons; returns true if handled
+  flightKey(k, e) {
+    if (this.state !== 'flight' || this.paused) return false;
+    const s = this.sim;
+    {
+      if (k === ' ') { e?.preventDefault(); s.separate(); }
       else if (k === 'x') s.cutEngines();
       else if (k === 'r') s.igniteEngines();
       else if (k === 't') { s.setAutopilot(!s.autopilot); s.setAttMode('guidance'); }
@@ -226,8 +237,9 @@ class App {
       else if (k === '.') this.warp(1);
       else if (k === 'u') { settings.data.units = toggleUnits(); settings.save(); }
       else if (k === 'escape') this.pauseToggle();
-    } else if (this.state === 'flight' && this.paused && k === 'escape') this.pauseToggle();
-    else if (this.state === 'results' && k === 'escape') { this.state = 'flight'; this.ui.show('flight'); }
+      else return false;
+    }
+    return true;
   }
 
   readInputs(dt) {
