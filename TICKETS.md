@@ -68,11 +68,11 @@ if (fails) { console.error(fails + ' vehicles failed to reach orbit'); process.e
   localStorage. Built vehicles appear in the rocket list under a "Custom" class.
 - [ ] **T8 — Touch / on-screen controls.** When a touch device is detected, show on-screen
   buttons for pitch/yaw, stage, throttle, map and camera in the flight HUD.
-- [ ] **T9 — Tutorial mission.** A guided first flight that highlights each step (fuel,
-  checks, authorize, stage, map) with dismissible callouts.
 - [ ] **T10 — Desktop packaging.** Add an Electron (or Tauri) wrapper with `npm run
   desktop`, a window icon and a build script producing a Windows installer.
 
 ## Done
 
 (The routine moves finished tickets here with the commit hash.)
+
+- [x] **T9 — Tutorial mission.** New first mission "Tutorial — First Flight": preselects Falcon 9, forces normal difficulty and no random failures, and shows dismissible callouts (`src/ui/tutorial.js`) for vehicle, fuel, config, fueling, checks, authorize, liftoff, stage, map and orbit, with a "Skip tutorial" link.
