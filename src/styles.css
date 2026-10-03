@@ -189,3 +189,16 @@ input[type=range] { width: 100%; accent-color: var(--cyan); }
 .progress .bar { height: 10px; margin-top: 8px; }
 .toast { position: absolute; left: 50%; top: 70px; transform: translateX(-50%); background: var(--panel-2); border: 1px solid var(--cyan); padding: 8px 18px; color: #e8fbff; letter-spacing: 0.08em; font-size: 12px; opacity: 0; transition: opacity 0.3s; }
 .toast.on { opacity: 1; }
+
+/* on-screen flight controls (touch devices) */
+.touch { display: none; }
+.is-touch .touch { display: block; }
+.is-touch .keys { display: none; }
+.touch .tpad { position: absolute; bottom: 70px; display: grid; gap: 8px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.touch .tpad.tl { left: 16px; grid-template-columns: repeat(3, 64px); grid-template-areas: ". w ." "a . d" ". s ."; }
+.touch .tpad.tl [data-hold=w] { grid-area: w; } .touch .tpad.tl [data-hold=a] { grid-area: a; } .touch .tpad.tl [data-hold=d] { grid-area: d; } .touch .tpad.tl [data-hold=s] { grid-area: s; }
+.touch .tpad.tr { right: 16px; grid-template-columns: repeat(2, 84px); }
+.touch button { min-height: 52px; font-size: 13px; touch-action: none; }
+.touch button.on { background: #0b3d52; border-color: var(--cyan); }
+.is-touch .hud-bottom button { min-height: 40px; }
+.is-touch .hud-log { display: none; }

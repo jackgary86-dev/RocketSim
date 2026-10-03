@@ -66,8 +66,6 @@ if (fails) { console.error(fails + ' vehicles failed to reach orbit'); process.e
 - [ ] **T7 — Rocket builder (MVP).** New "Builder" screen: pick a first stage, upper stage,
   optional boosters and nose from the existing catalogue parts, name it, and save it to
   localStorage. Built vehicles appear in the rocket list under a "Custom" class.
-- [ ] **T8 — Touch / on-screen controls.** When a touch device is detected, show on-screen
-  buttons for pitch/yaw, stage, throttle, map and camera in the flight HUD.
 - [ ] **T9 — Tutorial mission.** A guided first flight that highlights each step (fuel,
   checks, authorize, stage, map) with dismissible callouts.
 - [ ] **T10 — Desktop packaging.** Add an Electron (or Tauri) wrapper with `npm run
@@ -76,3 +74,5 @@ if (fails) { console.error(fails + ' vehicles failed to reach orbit'); process.e
 ## Done
 
 (The routine moves finished tickets here with the commit hash.)
+
+- [x] **T8 — Touch / on-screen controls.** Flight HUD shows hold buttons (pitch/yaw, throttle) and tap buttons (cut, relight, deploy, prograde/retrograde) on touch devices, alongside the existing stage/autopilot/camera/map/warp/pause bar; keyboard and touch share `flightKey()` in `src/main.js`.

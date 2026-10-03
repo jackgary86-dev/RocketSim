@@ -15,6 +15,10 @@ function steps(current) {
 }
 
 /** DOM screens. Every screen is a div.screen inside #ui; only one is active at a time. */
+export function isTouchDevice() {
+  try { return (window.matchMedia && matchMedia('(pointer: coarse)').matches) || 'ontouchstart' in window || navigator.maxTouchPoints > 0; } catch { return false; }
+}
+
 export class UI {
   constructor(root) {
     this.root = root;
@@ -373,6 +377,10 @@ export class UI {
       <div class="hud-bottom">
         <button data-a="stage">SPACE · Stage</button><button data-a="auto" id="h-auto">T · Autopilot</button><button data-a="cam">C · Camera</button><button data-a="map">M · Map</button><button data-a="warp-">,</button><span id="h-warp" style="padding:7px 4px;color:var(--cyan)">1×</span><button data-a="warp+">.</button><button data-a="pause">ESC</button>
       </div>
+      <div class="touch" id="h-touch">
+        <div class="tpad tl"><button data-hold="w">▲</button><button data-hold="a">◀</button><button data-hold="d">▶</button><button data-hold="s">▼</button></div>
+        <div class="tpad tr"><button data-hold="e">THR +</button><button data-hold="q">THR −</button><button data-tap="x">CUT</button><button data-tap="r">RELIGHT</button><button data-tap="p">DEPLOY</button><button data-tap="1">PRO</button><button data-tap="2">RETRO</button></div>
+      </div>
       <div class="keys" id="h-keys"><b>W/S · A/D</b> pitch · yaw<br><b>Q / E</b> throttle<br><b>X / R</b> cutoff / relight<br><b>1 / 2 / P</b> prograde · retrograde · deploy</div>`);
     this.on(s, '[data-a=stage]', 'click', h.stage);
     this.on(s, '[data-a=auto]', 'click', h.auto);
@@ -381,6 +389,18 @@ export class UI {
     this.on(s, '[data-a="warp-"]', 'click', () => h.warp(-1));
     this.on(s, '[data-a="warp+"]', 'click', () => h.warp(1));
     this.on(s, '[data-a=pause]', 'click', h.pause);
+    // on-screen controls (touch devices only): hold buttons feed the same key state as the keyboard
+    const touch = s.querySelector('#h-touch');
+    if (isTouchDevice()) {
+      s.classList.add('is-touch');
+      touch.querySelectorAll('[data-hold]').forEach((b) => {
+        const k = b.dataset.hold;
+        const set = (down) => (e) => { e.preventDefault(); b.classList.toggle('on', down); h.hold(k, down); };
+        b.addEventListener('pointerdown', set(true));
+        for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) b.addEventListener(ev, set(false));
+      });
+      touch.querySelectorAll('[data-tap]').forEach((b) => b.addEventListener('pointerdown', (e) => { e.preventDefault(); h.tap(b.dataset.tap); }));
+    }
     this._hLog = 0;
     this.show('flight');
   }
