@@ -63,16 +63,19 @@ if (fails) { console.error(fails + ' vehicles failed to reach orbit'); process.e
 - [ ] **T6 — Replay export.** Record the flight track (`sim.track` plus events) and add a
   "Download telemetry CSV" and "Download mission card PNG" (canvas-rendered summary:
   vehicle, orbit, score, map thumbnail) to the results screen.
-- [ ] **T7 — Rocket builder (MVP).** New "Builder" screen: pick a first stage, upper stage,
-  optional boosters and nose from the existing catalogue parts, name it, and save it to
-  localStorage. Built vehicles appear in the rocket list under a "Custom" class.
 - [ ] **T8 — Touch / on-screen controls.** When a touch device is detected, show on-screen
   buttons for pitch/yaw, stage, throttle, map and camera in the flight HUD.
 - [ ] **T9 — Tutorial mission.** A guided first flight that highlights each step (fuel,
   checks, authorize, stage, map) with dismissible callouts.
 - [ ] **T10 — Desktop packaging.** Add an Electron (or Tauri) wrapper with `npm run
   desktop`, a window icon and a build script producing a Windows installer.
+- [ ] **T21 — Builder follow-ups.** Edit an existing custom design (re-open it in the builder
+  instead of delete + rebuild), allow a single-stage or three-stage stack, expose Shuttle
+  orbiter / ship-nose parts, let the player pick the payload mass manually (capped at the
+  certified maximum), and let Missions with a `rocketClass` accept Custom vehicles by size.
 
 ## Done
 
 (The routine moves finished tickets here with the commit hash.)
+
+- [x] **T7 — Rocket builder (MVP).** `src/data/builder.js` + Builder screen (menu and rocket list): pick a first stage, upper stage, optional boosters, nose and livery from catalogue parts; payload is sized from Δv margin and certified by a headless ascent before saving to localStorage; designs appear under a "Custom" class and can be deleted.
